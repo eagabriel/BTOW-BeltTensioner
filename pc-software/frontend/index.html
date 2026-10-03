@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Motor + Belt Tensioner Dashboard</title>
+<title>BTOW — Belt Tensioner Dashboard</title>
 <style>
   :root{
     --bg:#0e1116; --panel:#171b22; --panel2:#1f2530; --line:#2a3140;
@@ -141,7 +141,7 @@
 </head>
 <body>
 <header>
-  <h1>⚙️ Motor + Belt Tensioner</h1>
+  <h1>BTOW · Belt Tensioner</h1>
   <span class="pill"><span id="dot" class="dot"></span><span id="status">desconectado</span></span>
   <button id="connect" class="primary">Conectar</button>
   <span class="vbadge">Bateria: <b id="v_hdr">--</b> V</span>
@@ -277,7 +277,7 @@
   <section id="view-belt2" class="view active">
     <div class="panel" style="margin-bottom:14px">
       <div class="belt-brand-header">
-        <img class="belt-brand-logo" src="/static/BT-Wheel-logo.png" alt="BT-Wheel" width="100" height="100">
+        <img class="belt-brand-logo" src="/static/BT-Wheel-logo.png" alt="BTOW" width="100" height="100">
         <div class="belt-brand-content">
       <h2>Belt Tensioner · mapeamento avançado <span class="tag">torque unipolar</span></h2>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -671,7 +671,7 @@ function applyTooltips(){
 }
 function applyLanguage(){
   document.documentElement.lang=uiLanguage;
-  document.title=ui("Painel do Motor + Belt Tensioner","Motor + Belt Tensioner Dashboard");
+  document.title=ui("BTOW — Painel Belt Tensioner","BTOW — Belt Tensioner Dashboard");
   $("language-select").value=uiLanguage;
   $("cmd").placeholder=ui("comando (T5000, TY3000, TX-2000, E, EY, S) — Enter envia","command (T5000, TY3000, TX-2000, E, EY, S) — press Enter to send");
   translateStaticText();

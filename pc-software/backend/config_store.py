@@ -10,10 +10,11 @@ CONFIG_VERSION = 1
 
 
 def config_directory() -> Path:
-    override = os.environ.get("HOVERBELT_CONFIG_DIR")
+    override = os.environ.get("BTOW_CONFIG_DIR") or os.environ.get("HOVERBELT_CONFIG_DIR")
     if override:
         return Path(override).expanduser().resolve()
     base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    # Preserve existing profiles across the application rename.
     return base / "HoverBelt"
 
 

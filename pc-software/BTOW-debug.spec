@@ -33,7 +33,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='HoverBelt-debug',
+    name='BTOW-debug',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -1,4 +1,4 @@
-# Build, configure and use BT-Wheel
+# Build, configure and use BTOW
 
 This guide covers my build and the software version documented on October 2, 2026. Application and firmware are in separate folders. Match the firmware pinout to your board revision before wiring anything.
 
@@ -156,13 +156,13 @@ Use the executable or Python source. Run only one server instance: both use port
 
 ### Option A — Windows executable, no Python required
 
-1. Obtain `HoverBelt.exe` from a compiled distribution. Local builds produce `pc-software/dist/HoverBelt.exe`; a GitHub release download is not available yet.
+1. Obtain `BTOW.exe` from a compiled distribution or check [GitHub Releases](https://github.com/eagabriel/BTOW-BeltTensioner/releases). Local builds produce `pc-software/dist/BTOW.exe`; older builds used the name `HoverBelt.exe`.
 2. Copy and open it on your PC. No Python or `pip install` is required.
 3. It starts `http://127.0.0.1:8000` and opens a desktop window requiring **Microsoft Edge WebView2 Runtime**.
 4. For browser serial access, open the same address in Chrome or Edge and select **Connect**. Keep the executable running.
 5. Stop/disarm before closing the application.
 
-The executable does not flash the board; use ST-Link separately. On startup failure, check `hoverbelt-error.log` next to the executable. Settings are saved under `%LOCALAPPDATA%\HoverBelt`.
+The executable does not flash the board; use ST-Link separately. On startup failure, check `btow-error.log` next to the executable. Settings remain under `%LOCALAPPDATA%\HoverBelt` for compatibility with existing installations; renaming the application does not reset profiles.
 
 ### Option B — Python source
 
@@ -181,7 +181,7 @@ Open `http://127.0.0.1:8000` in Chrome/Edge. Keep the terminal open; `Ctrl+C` st
 
 ### Build your executable
 
-With `python` on PATH, run `pc-software/build.bat` (or `build.bat` if already inside `pc-software/`). It installs build dependencies and packages the server/interface using PyInstaller into `pc-software/dist/HoverBelt.exe`. **It removes existing build and dist folders inside `pc-software/`**: back up wanted artifacts first. The executable runs on another Windows PC without Python, with WebView2 Runtime available. The batch scripts select their own working folder, so launching them by double-click also works.
+With `python` on PATH, run `pc-software/build.bat` (or `build.bat` if already inside `pc-software/`). It installs build dependencies and packages the server/interface using PyInstaller into `pc-software/dist/BTOW.exe`. **It removes existing build and dist folders inside `pc-software/`**: back up wanted artifacts first. The executable runs on another Windows PC without Python, with WebView2 Runtime available. The batch scripts select their own working folder, so launching them by double-click also works.
 
 ## 6. Initial configuration and alignment
 
@@ -272,7 +272,7 @@ To change the JSON folder:
 Run this from `pc-software/`, where the virtual environment was created:
 
 ```powershell
-$env:HOVERBELT_CONFIG_DIR = 'C:\BT-Wheel-config'
+$env:BTOW_CONFIG_DIR = 'C:\BTOW-config'
 .\.venv\Scripts\python.exe run.py
 ```
 
@@ -298,7 +298,7 @@ Both imports disarm the belt system and require manual arming afterward. Stop di
 | Unrealistic current in older diagnostics | Divide raw Iq by 800 |
 | Command cutouts | RPM, configured limit and flags |
 | One side oscillates | Capture CSV; check sensor, mechanics and calibration before PI tuning |
-| Executable closes at startup | Read hoverbelt-error.log |
+| Executable closes at startup | Read btow-error.log |
 
 ## 12. Safety protections and limits
 

@@ -24,6 +24,8 @@
 HARDWARE_DIAGNOSTIC_HANDOFF.md
 bt-wheel-belt-*.json
 bt-wheel-motors-*.json
+btow-belt-*.json
+btow-motors-*.json
 docs/PUBLICACAO.md
 # Obsolete standalone dashboard and unused Portuguese captures
 pc-software/motor-dashboard.html

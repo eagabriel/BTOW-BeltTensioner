@@ -11,13 +11,13 @@ echo.
 echo === Limpando ===
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
-if exist HoverBelt.spec del /q HoverBelt.spec
+if exist BTOW-debug.spec del /q BTOW-debug.spec
 
 echo.
 echo === PyInstaller ===
 python -m PyInstaller ^
   --onefile ^
-  --name HoverBelt-debug ^
+  --name BTOW-debug ^
   --icon "assets\BTOW.ico" ^
   --add-data "frontend;frontend" ^
   --hidden-import irsdk ^
@@ -32,7 +32,7 @@ if errorlevel 1 goto :err
 
 echo.
 echo === OK ===
-echo dist\HoverBelt-debug.exe (console visivel — rode dele mesmo pra ver erros)
+echo dist\BTOW-debug.exe (console visivel — rode dele mesmo pra ver erros)
 echo.
 pause
 exit /b 0

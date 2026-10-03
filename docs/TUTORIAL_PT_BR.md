@@ -1,3 +1,3 @@
-# BT-Wheel tutorial
+# BTOW tutorial
 
-The tutorial is now in English: [Build, configure and use BT-Wheel](TUTORIAL.md).
+The tutorial is now in English: [Build, configure and use BTOW](TUTORIAL.md).

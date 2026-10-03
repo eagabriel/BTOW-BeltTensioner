@@ -22,7 +22,7 @@ function downloadProfile(kind, config) {
   const blob = new Blob([JSON.stringify({version:1, kind, config}, null, 2) + "\n"], {type:"application/json"});
   const url = URL.createObjectURL(blob), a = document.createElement("a");
   a.href = url;
-  a.download = `bt-wheel-${kind}-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `btow-${kind}-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

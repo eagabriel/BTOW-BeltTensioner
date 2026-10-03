@@ -1,6 +1,6 @@
-# BT-Wheel — Belt Tensioner for iRacing
+# BTOW — Belt Tensioner for iRacing
 
-BT-Wheel turns iRacing acceleration telemetry into independent torque commands for two belts. I built it around two BLDC motors, MT6701 encoders, a modified hoverboard controller and a PC application.
+BTOW turns iRacing acceleration telemetry into independent torque commands for two belts. I built it around two BLDC motors, MT6701 encoders, a modified hoverboard controller and a PC application. The GitHub repository is named BTOW-BeltTensioner.
 
 ![BT-Wheel](BT-Wheel-logo.png)
 
@@ -14,7 +14,7 @@ BT-Wheel is an experimental project, not a certified restraint device. Provide a
 
 ![BT-Wheel belt tensioner operating — animated demonstration](docs/images/belt-tensioner-demo.gif)
 
-Watch my belt tensioner operating: [download the demonstration video](https://raw.githubusercontent.com/eagabriel/BT-Wheel/refs/heads/main/docs/images/belt-tensioner-demo.mp4) (MP4, approximately 48 MB). Open the downloaded file in your video player; GitHub's file page does not provide inline playback for this video.
+Watch my belt tensioner operating: [download the demonstration video](https://raw.githubusercontent.com/eagabriel/BTOW-BeltTensioner/refs/heads/main/docs/images/belt-tensioner-demo.mp4) (MP4, approximately 48 MB). Open the downloaded file in your video player; GitHub's file page does not provide inline playback for this video.
 
 ## How it works
 
@@ -64,9 +64,11 @@ Read the [build, installation and usage tutorial](docs/TUTORIAL.md) and the [ser
 
 ### Windows executable — no Python required
 
-Open `HoverBelt.exe` from a compiled distribution. It starts the local server and desktop window, which requires Microsoft Edge WebView2 Runtime. For browser serial access, open `http://127.0.0.1:8000` in Chrome or Edge and keep the executable running. Run only one server instance.
+Open `BTOW.exe` from a compiled distribution. It starts the local server and desktop window, which requires Microsoft Edge WebView2 Runtime. For browser serial access, open `http://127.0.0.1:8000` in Chrome or Edge and keep the executable running. Run only one server instance.
 
-The local build produces `pc-software/dist/HoverBelt.exe`. A GitHub release download is not available yet. The PC executable does not flash the controller; use ST-Link separately.
+The local build produces `pc-software/dist/BTOW.exe`. Older builds used the name `HoverBelt.exe`. See [GitHub Releases](https://github.com/eagabriel/BTOW-BeltTensioner/releases) for published artifacts. The PC executable does not flash the controller; use ST-Link separately.
+
+Existing settings remain in `%LOCALAPPDATA%\HoverBelt` for compatibility. Use `BTOW_CONFIG_DIR` to override the folder; the older `HOVERBELT_CONFIG_DIR` variable is still supported.
 
 ### Python source
 
@@ -86,7 +88,7 @@ To open, build and flash the firmware in **VS Code with PlatformIO IDE**, follow
 ## Folder layout
 
 ```text
-BT-Wheel/
+BTOW-BeltTensioner/
   pc-software/
     backend/             telemetry, mapping, server and JSON persistence
     frontend/            main dashboard and profile import/export
@@ -120,4 +122,4 @@ I adapted the telemetry signal-conditioning and filtering approach from [mherbol
 
 The firmware derives from [EFeru/hoverboard-firmware-hack-FOC](https://github.com/EFeru/hoverboard-firmware-hack-FOC) and the [SiMachines fork](https://github.com/SiMachines/hoverboard-firmware-hack-FOC). Preserve their credits and the firmware's GPLv3 license when redistributing it. The application's distribution license still needs to be formalized; this README does not change existing licenses.
 
-Project repository: [eagabriel/BT-Wheel](https://github.com/eagabriel/BT-Wheel).
+Project repository: [eagabriel/BTOW-BeltTensioner](https://github.com/eagabriel/BTOW-BeltTensioner).

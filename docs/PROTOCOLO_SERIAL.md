@@ -1,4 +1,4 @@
-# BT-Wheel serial protocol
+# BTOW serial protocol
 
 USART3: 115200 baud, 8 data bits, no parity, 1 stop bit. ASCII commands end with `\n`. Current pinout: TX PC10, RX PC11.
 

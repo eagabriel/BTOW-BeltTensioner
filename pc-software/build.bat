@@ -10,13 +10,13 @@ echo.
 echo === Limpando builds anteriores ===
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
-if exist HoverBelt.spec del /q HoverBelt.spec
+if exist BTOW.spec del /q BTOW.spec
 
 echo.
 echo === PyInstaller ===
 python -m PyInstaller ^
   --onefile ^
-  --name HoverBelt ^
+  --name BTOW ^
   --noconsole ^
   --icon "assets\BTOW.ico" ^
   --add-data "frontend;frontend" ^
@@ -31,7 +31,7 @@ if errorlevel 1 goto :err
 
 echo.
 echo === OK ===
-echo Executavel: %~dp0dist\HoverBelt.exe
+echo Executavel: %~dp0dist\BTOW.exe
 echo (Requer WebView2 Runtime instalado — presente por padrao no Windows 11)
 echo.
 pause
