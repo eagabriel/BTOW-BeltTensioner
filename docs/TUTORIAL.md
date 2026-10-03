@@ -265,6 +265,21 @@ Start iRacing, enter a session and disable random test mode. Verify the source b
 
 ## 10. Settings and backups
 
+### My working example profiles
+
+I include the two profiles I use on my working assembly:
+
+- [Motor settings — btow-motors.example.json](../profiles/btow-motors.example.json).
+- [Telemetry belt effects — btow-belt.example.json](../profiles/btow-belt.example.json).
+
+Use them as a reference for a comparable build, not as universal safe defaults. My motor profile uses a 10 A motor-current limit, a 400 rpm speed limit, Kt = 0.551 N·m/A, a 24 V nominal supply and a 3 Ω braking resistor. Verify these settings, DC-link current, regeneration handling and direction against your actual hardware before applying them. The belt profile includes nonzero pretension and substantial gains; start with reduced limits/gains and nobody restrained by the belts.
+
+1. Back up your current motor and belt settings using **Export JSON**. Stop diagnostics, disarm the system and keep the mechanism safe.
+2. Connect the controller, open **Settings / Config**, reload from the controller, then use **Import JSON** to load the motor example. Review every field before **Apply + save to flash**, and restart for startup-only parameters.
+3. Configure and verify encoder calibration for your own assembly. These profiles do not contain encoder calibration offsets and do not replace your saved calibration.
+4. With the server connected, open **Belt Tensioner** and use **Import JSON** to load the belt example. This replaces and automatically saves the effect settings; check the save status. It does not arm the system.
+5. Check encoder feedback, current, motor directions and belt pull with nobody in the belts before manually arming. Importing successfully does not validate electrical or mechanical safety.
+
 Belt settings are saved to `%LOCALAPPDATA%\HoverBelt\belt_advanced.json`. `belt_tensioner.json` belongs to the legacy backend mapping. Electrical settings/calibration are stored separately in MCU flash.
 
 To change the JSON folder:

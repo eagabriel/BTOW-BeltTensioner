@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "kind": "motors",
+  "config": {
+    "i_mot_max": 10,
+    "i_dc_max": 22,
+    "n_mot_max": 400,
+    "motor_kt": 0.551,
+    "invert_x": false,
+    "invert_y": false,
+    "brk_ramp_ena": true,
+    "brake_res": 3,
+    "brk_res_sens": 40,
+    "max_regen": 0,
+    "brk_ov_start": 24,
+    "brk_ov_end": 27,
+    "align_i_x": 3.75,
+    "align_i_y": 3.75,
+    "align_turns_elec": 2,
+    "enc_cpr": 4096,
+    "bat_nominal": 24,
+    "target_bw_hz": 100
+  }
+}

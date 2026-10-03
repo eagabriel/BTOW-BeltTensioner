@@ -31,3 +31,19 @@ assert.ok(html.includes('/static/config-files.js'));
 for (const id of ['motor-export', 'motor-import', 'motor-import-file', 'belt-export', 'belt-import', 'belt-import-file'])
   assert.ok(html.includes(`id="${id}"`));
 console.log('PASS: JavaScript syntax, profile validation, ramp consistency and UI hooks');
+
+const profiles = path.join(root, '..', 'profiles');
+if (fs.existsSync(profiles)) {
+  const motorFields = vm.runInContext(html.match(/const CFG_FIELDS=\[[\s\S]*?\];/)[0] + '\nCFG_FIELDS', context);
+  const beltKeys = vm.runInContext(html.match(/const BELT_ADV_CFG_KEYS = \[[^\n]+;/)[0] + '\nBELT_ADV_CFG_KEYS', context);
+  const beltFields = Array.from(beltKeys, n => {
+    const tag = html.match(new RegExp(`<input id="a_${n}"[^>]+>`))[0];
+    return {n, t:n === 'pretension' ? 'int' : 'float',
+      min:Number(tag.match(/min="([^"]+)"/)[1]), max:Number(tag.match(/max="([^"]+)"/)[1])};
+  }).concat(['invert_lat', 'subtract_gravity', 'auto_scale'].map(n => ({n, t:'bool'})));
+  for (const [kind, schema] of [['motors', motorFields], ['belt', beltFields]]) {
+    const profile = JSON.parse(fs.readFileSync(path.join(profiles, `btow-${kind}.example.json`), 'utf8'));
+    context.validateProfile(profile, kind, schema);
+  }
+  console.log('PASS: working example profiles accepted by the actual import validator');
+}

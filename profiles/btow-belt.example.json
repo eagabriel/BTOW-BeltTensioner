@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "kind": "belt",
+  "config": {
+    "pretension": 1900,
+    "smoothing": 0.17,
+    "left_attenuation_pct": 100,
+    "right_attenuation_pct": 100,
+    "k_lat": 8700,
+    "lat_max_g": 3.5,
+    "k_lon_brake": 12800,
+    "lon_max_g": 2.15,
+    "k_vert": 18500,
+    "vert_max_g": 1.15,
+    "lat_deadzone_g": 0.05,
+    "lat_curve": 0,
+    "lon_deadzone_g": 0.03,
+    "lon_curve": 0,
+    "vert_deadzone_g": 0.04,
+    "vert_curve": 0,
+    "invert_lat": false,
+    "subtract_gravity": true,
+    "auto_scale": false
+  }
+}

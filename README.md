@@ -62,6 +62,8 @@ Torque readings are estimates. Command conversion uses `Kt × Imax`; measured cu
 
 Read the [build, installation and usage tutorial](docs/TUTORIAL.md) and the [serial protocol](docs/PROTOCOLO_SERIAL.md).
 
+My working motor and telemetry-effect profiles are included in [profiles/](profiles/). Follow the [profile import instructions](docs/TUTORIAL.md#my-working-example-profiles) and review every hardware limit before using them; they are examples from my assembly, not universal safe defaults.
+
 ### Windows executable — no Python required
 
 Open `BTOW.exe` from a compiled distribution. It starts the local server and desktop window, which requires Microsoft Edge WebView2 Runtime. For browser serial access, open `http://127.0.0.1:8000` in Chrome or Edge and keep the executable running. Run only one server instance.
@@ -106,6 +108,7 @@ BTOW-BeltTensioner/
     platformio.ini       TWO_AXIS_VARIANT environment
   mt6701-programmer/      Arduino Pro Micro encoder configuration tool
   Mechanical/            FreeCAD assembly and printed-part designs
+  profiles/              working example motor and telemetry-effect JSONs
 ```
 
 The PC application is contained in `pc-software/`. Launch `run.bat` there, and use `build.bat` or `build-debug.bat` there to package it. Synthetic test mode is available inside the dashboard. Open `firmware/` or `mt6701-programmer/` separately in PlatformIO; each has its own build configuration. Generated caches and executables are excluded from source control.

@@ -26,6 +26,8 @@ bt-wheel-belt-*.json
 bt-wheel-motors-*.json
 btow-belt-*.json
 btow-motors-*.json
+/bt-wheel-belt.json
+/bt-wheel-motors.json
 docs/PUBLICACAO.md
 # Obsolete standalone dashboard and unused Portuguese captures
 pc-software/motor-dashboard.html
