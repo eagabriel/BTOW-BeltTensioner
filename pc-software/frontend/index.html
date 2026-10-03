@@ -1,0 +1,2164 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motor + Belt Tensioner Dashboard</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#171b22; --panel2:#1f2530; --line:#2a3140;
+    --txt:#e6edf3; --muted:#8b98a8; --accent:#4aa3ff;
+    --v:#ffcc44; --idc:#c9d1d9; --ia:#ff5c6c; --ib:#38d39f; --ic:#4aa3ff;
+    --ok:#38d39f; --bad:#ff5c6c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.4 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
+  .grow{flex:1}
+  button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px 12px;cursor:pointer;font-size:13px}
+  button:hover:not(:disabled){border-color:var(--accent)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#04121f;font-weight:600}
+  button.danger{background:#3a1720;border-color:#5a2230;color:var(--bad)}
+  .language-select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--bad)}
+  .dot.on{background:var(--ok)}
+  .vbadge{font-size:13px;color:var(--muted)}
+  .vbadge b{color:var(--v);font-size:18px;font-variant-numeric:tabular-nums}
+  .tabs{display:flex;gap:4px}
+  .tab{padding:7px 14px;border-radius:7px 7px 0 0;background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer}
+  .tab.active{background:var(--panel);border-color:var(--line);border-bottom-color:var(--panel);color:var(--txt)}
+  main{padding:14px}
+  .view{display:none}.view.active{display:block}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .panel h2{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+  .tag{font-size:11px;padding:2px 7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+
+  .axes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:900px){.axes,.charts{grid-template-columns:1fr}}
+
+  .nums{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  @media(max-width:520px){.nums{grid-template-columns:repeat(3,1fr)}}
+  .num{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px}
+  .num .lbl{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .num .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  .num .u{font-size:11px;color:var(--muted);font-weight:400}
+  .swatch{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+  .torque{margin-top:12px}
+  .torque .row{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .torque input[type=range]{flex:1;accent-color:var(--accent)}
+  .torque .tval{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;min-width:78px;text-align:right}
+  .torque .opts{display:flex;align-items:center;gap:12px;margin-top:9px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  label.ck{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+
+  canvas{width:100%;height:320px;display:block;background:var(--panel2);border-radius:8px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:9px}
+  .legend label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;user-select:none}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .legend span i{display:inline-block;width:18px;height:3px;border-radius:2px}
+  .axhint{font-size:11px;color:var(--muted);margin-top:5px}
+
+  #log{height:52vh;overflow:auto;background:#080a0d;border:1px solid var(--line);border-radius:8px;padding:10px;
+       font:12px/1.45 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+  #log .tx{color:var(--accent)}#log .rx{color:#b9c4d0}#log .sys{color:var(--muted);font-style:italic}
+  .cmdrow{display:flex;gap:8px;margin-top:10px}
+  .cmdrow input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--txt);padding:9px 10px;font:13px ui-monospace,monospace}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .quick button{padding:5px 10px;font-size:12px}
+  .warn{background:#3a2a12;border:1px solid #6b4c1a;color:#ffcf8f;padding:10px 12px;border-radius:8px;margin:14px}
+
+  .cfg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px}
+  @media(max-width:720px){.cfg-grid{grid-template-columns:1fr}}
+  .cfg-row{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px}
+  .cfg-row.dirty{border-color:var(--v)}
+  .cfg-row.boot{border-left:3px solid #ffcc44}
+  .cfg-lab{flex:1}
+  .cfg-lab .n{font-size:13px;font-weight:600}
+  .cfg-lab .h{font-size:11px;color:var(--muted);margin-top:2px}
+  .cfg-row input[type=number],.cfg-row input[type=text]{
+    background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt);
+    padding:6px 9px;font:13px ui-monospace,monospace;width:110px;text-align:right}
+  .cfg-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+  .cfg-row .u{font-size:11px;color:var(--muted);min-width:32px}
+  .cfg-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  #cfg-status{font-family:ui-monospace,Consolas,monospace}
+  #cfg-status.ok{color:var(--ok)}#cfg-status.err{color:var(--bad)}
+
+  /* ============ Belt Tensioner tab ============ */
+  .belt-grid{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+  @media(max-width:960px){.belt-grid{grid-template-columns:1fr}}
+  canvas#gball{background:#0a0d12;border-radius:8px;cursor:crosshair;touch-action:none;display:block;width:380px;height:380px}
+  canvas#gball2{background:#0a0d12;border-radius:8px;cursor:crosshair;touch-action:none;display:block;width:260px;height:260px}
+  canvas#gball.dragging,canvas#gball2.dragging{cursor:grabbing}
+  canvas#vchart,canvas#vchart2{background:#0a0d12;border-radius:8px;width:100%;height:260px}
+  canvas#torquechart2{background:#0a0d12;border-radius:8px;width:100%;height:190px}
+  .belt-readings{margin-top:6px;font:12px ui-monospace,Consolas,monospace;color:var(--muted)}
+  .belt-readings b{color:var(--txt);font-variant-numeric:tabular-nums;padding:0 3px}
+
+  .torque-bars{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+  .tb-block{display:flex;flex-direction:column;gap:5px}
+  .tb-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+  .tb-track{position:relative;height:22px;background:#0a0d12;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .tb-fill{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,#38d39f 0,#ffcc44 60%,#ff8c3a 100%)}
+  .tb-mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:#ffcc44;opacity:.9;box-shadow:0 0 4px rgba(255,204,68,.6);pointer-events:none}
+  .tb-value{font:13px ui-monospace,Consolas,monospace;color:var(--txt);font-variant-numeric:tabular-nums}
+
+  .belt-sliders{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+  @media(max-width:720px){.belt-sliders{grid-template-columns:1fr}}
+  .belt-sliders label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .belt-sliders label output{font:13px ui-monospace,Consolas,monospace;color:var(--txt);text-transform:none;font-weight:600}
+  .belt-sliders input[type=range]{width:100%;accent-color:var(--accent)}
+  .ck-belt{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);text-transform:none;cursor:pointer}
+  .ck-belt input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  .belt-h3{margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+  .belt-brand-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:12px}
+  .belt-brand-logo{width:100px;height:auto;flex:0 0 100px;display:block}
+  .belt-brand-content{flex:1;min-width:0}
+  @media(max-width:480px){.belt-brand-header{gap:10px}.belt-brand-logo{width:72px;flex-basis:72px}}
+  .gpeak-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 14px}
+  @media(max-width:760px){.gpeak-grid{grid-template-columns:1fr}}
+  .gpeak-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .gpeak-card .name{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .gpeak-card .peak{font:700 18px ui-monospace,Consolas,monospace;margin:5px 0}
+  .gpeak-card .ends{font:11px ui-monospace,Consolas,monospace;color:var(--muted)}
+  .diag-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 18px;align-items:end}
+  @media(max-width:850px){.diag-controls{grid-template-columns:1fr 1fr}}
+  .diag-controls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);text-transform:uppercase}
+  .diag-controls select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px}
+  .diag-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  @media(max-width:720px){.diag-summary{grid-template-columns:1fr}}
+  .diag-side{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;font:12px ui-monospace,Consolas,monospace;white-space:pre-line}
+  canvas#diag-chart{height:500px;background:#0a0d12}
+
+  #belt-arm,#belt2-arm{padding:8px 22px;font-weight:700;letter-spacing:.05em}
+  #belt-arm.armed,#belt2-arm.armed{background:#3a1720;border-color:#5a2230;color:var(--bad);animation:beltpulse 1s infinite}
+  @keyframes beltpulse{50%{opacity:.65}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚙️ Motor + Belt Tensioner</h1>
+  <span class="pill"><span id="dot" class="dot"></span><span id="status">desconectado</span></span>
+  <button id="connect" class="primary">Conectar</button>
+  <span class="vbadge">Bateria: <b id="v_hdr">--</b> V</span>
+  <select id="language-select" class="language-select" aria-label="Idioma / Language" title="Seleciona o idioma da interface / Selects the interface language">
+    <option value="pt-BR">PT-BR</option>
+    <option value="en">EN</option>
+  </select>
+  <div class="grow"></div>
+  <div class="tabs">
+    <button class="tab active" data-view="belt2">Belt Tensioner</button>
+    <button class="tab" data-view="diag">Diagnóstico</button>
+    <button class="tab" data-view="dash">Motors Dash</button>
+    <button class="tab" data-view="config">Config</button>
+    <button class="tab" data-view="console">Console</button>
+  </div>
+</header>
+
+<div id="nosupport" class="warn" style="display:none">
+  Este navegador não expõe a <b>Web Serial API</b>. Use <b>Chrome</b> ou <b>Edge</b> (desktop).
+</div>
+
+<main>
+  <section id="view-dash" class="view">
+    <div class="axes" id="axcards"></div>
+    <div class="charts">
+      <div class="panel">
+        <h2>Motor Y <span class="tag">tensão esq · corrente dir · 0 ao centro</span></h2>
+        <canvas id="chartY"></canvas>
+        <div class="legend" id="legY"></div>
+        <div class="axhint">Escala automática simétrica · janela <span class="ws"></span> s</div>
+      </div>
+      <div class="panel">
+        <h2>Motor X <span class="tag">tensão esq · corrente dir · 0 ao centro</span></h2>
+        <canvas id="chartX"></canvas>
+        <div class="legend" id="legX"></div>
+        <div class="axhint">Escala automática simétrica · janela <span class="ws"></span> s</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-belt" class="view">
+    <div class="panel" style="margin-bottom:14px">
+      <h2>Belt Tensioner
+        <span class="tag" id="belt-src-tag">--</span>
+        <span class="tag" id="belt-rate-tag">0 Hz</span>
+        <span class="tag" id="belt-age-tag" title="captura no backend até chegada à UI">app -- ms</span>
+        <span class="tag" id="belt-ws-tag" title="envio do backend até chegada à UI">WS -- ms</span>
+        <span class="tag" id="belt-serial-tag" title="espera e escrita na porta serial">serial -- ms</span>
+        <span class="tag" id="belt-drop-tag" title="comandos seriais substituídos e lacunas do WebSocket">descartes 0</span>
+        <span class="tag" id="belt-torque-scale">aguardando Kt/Imax</span>
+      </h2>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <span class="pill"><span id="belt-ir-dot" class="dot"></span><span id="belt-ir-status">backend --</span></span>
+        <label class="ck-belt"><input type="checkbox" id="belt-test-mode"> Modo de teste aleatório</label>
+        <div class="grow"></div>
+        <button id="belt-arm" disabled title="conecte a serial no topo primeiro">ARMAR</button>
+        <button id="belt-panic" class="danger">PARAR (ESC)</button>
+      </div>
+
+      <div class="belt-grid">
+        <div>
+          <div class="axhint" style="margin-bottom:4px">Balanço lateral × longitudinal (clique e segure em modo mock)</div>
+          <canvas id="gball" width="380" height="380"></canvas>
+          <div class="belt-readings">Lat <b id="belt-lat">0.00</b>g · Long <b id="belt-lon">0.00</b>g · |G| <b id="belt-mag">0.00</b>g</div>
+        </div>
+        <div>
+          <div class="axhint" style="margin-bottom:4px">Aceleração vertical (solavancos, −1 g removida)</div>
+          <canvas id="vchart"></canvas>
+          <div class="belt-readings">Vert bruto <b id="belt-vert">0.00</b>g · Vert AC <b id="belt-vertac">0.00</b>g · Pico ± <b id="belt-peak">0.00</b>g</div>
+        </div>
+      </div>
+
+      <h3 class="belt-h3">Torque enviado (0..32767 e N·m) — barra amarela = pré-tensão</h3>
+      <div class="torque-bars">
+        <div class="tb-block">
+          <div class="tb-label">ESQ · TY (pwml)</div>
+          <div class="tb-track"><div id="bar-l" class="tb-fill"></div><div id="mark-l" class="tb-mark" title="pré-tensão"></div></div>
+          <div class="tb-value"><span id="torque-l">0</span></div>
+        </div>
+        <div class="tb-block">
+          <div class="tb-label">DIR · TX (pwmr)</div>
+          <div class="tb-track"><div id="bar-r" class="tb-fill"></div><div id="mark-r" class="tb-mark" title="pré-tensão"></div></div>
+          <div class="tb-value"><span id="torque-r">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:14px">
+      <h2>Parâmetros de mapeamento G → torque <span class="tag" id="belt-save-status">carregando configuração…</span></h2>
+      <div class="belt-sliders">
+        <label>Pré-tensão <output id="v-pretension">2000</output>
+          <input id="pretension" type="range" min="0" max="16000" step="100" value="2000">
+        </label>
+        <label>Ganho lateral (por g) <output id="v-k_lat">12000</output>
+          <input id="k_lat" type="range" min="0" max="32767" step="100" value="12000">
+        </label>
+        <label>Ganho freio (por g) <output id="v-k_lon_brake">8000</output>
+          <input id="k_lon_brake" type="range" min="0" max="32767" step="100" value="8000">
+        </label>
+        <label>Ganho vertical (por g) <output id="v-k_vert">6000</output>
+          <input id="k_vert" type="range" min="0" max="32767" step="100" value="6000">
+        </label>
+        <label>Zona morta lat (g) <output id="v-deadzone_g">0.05</output>
+          <input id="deadzone_g" type="range" min="0" max="0.5" step="0.01" value="0.05">
+        </label>
+        <label>Zona morta vert (g) <output id="v-vert_deadzone_g">0.10</output>
+          <input id="vert_deadzone_g" type="range" min="0" max="0.5" step="0.01" value="0.10">
+        </label>
+        <label class="ck-belt" style="grid-column:1/-1">
+          <input id="invert_lat" type="checkbox"> Inverter lado (lat) — flip físico
+        </label>
+      </div>
+      <div class="axhint" id="belt-config-path" style="margin-top:10px"></div>
+    </div>
+
+    <div class="panel" id="mock-panel" hidden>
+      <h2>Modo mock · injeção de sinais</h2>
+      <label class="ck-belt" style="margin-bottom:8px">
+        <input id="auto-demo" type="checkbox" checked> Gerar estímulos aleatórios automaticamente
+      </label>
+      <div class="axhint" style="margin-bottom:10px">🖱️ Clique e segure no G-ball pra injetar Lat/Long. Solte pra liberar. Sine abaixo injeta bumps periódicos no vertical.</div>
+      <div class="belt-sliders">
+        <label>Frequência sine vert (Hz) <output id="v-sine_hz">0.0</output>
+          <input id="sine_hz" type="range" min="0" max="25" step="0.1" value="0">
+        </label>
+        <label>Amplitude sine vert (g) <output id="v-sine_amp_g">0.00</output>
+          <input id="sine_amp_g" type="range" min="0" max="1.5" step="0.01" value="0">
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-belt2" class="view active">
+    <div class="panel" style="margin-bottom:14px">
+      <div class="belt-brand-header">
+        <img class="belt-brand-logo" src="/static/BT-Wheel-logo.png" alt="BT-Wheel" width="100" height="100">
+        <div class="belt-brand-content">
+      <h2>Belt Tensioner · mapeamento avançado <span class="tag">torque unipolar</span></h2>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <span class="pill"><span id="belt2-ir-dot" class="dot"></span><span id="belt2-ir-status">backend --</span></span>
+        <label class="ck-belt"><input type="checkbox" id="belt2-test-mode"> Modo de teste aleatório</label>
+        <div class="grow"></div>
+        <button id="belt2-arm" disabled>ARMAR</button>
+        <button id="belt2-panic" class="danger">PARAR (ESC)</button>
+      </div>
+      <div class="belt-readings" style="margin-bottom:12px">
+        Lat <b id="belt2-lat">0.00</b>g · Long <b id="belt2-lon">0.00</b>g · Vert <b id="belt2-vert">0.00</b>g ·
+        Pitch <b id="belt2-pitch">0.00</b>° · Roll <b id="belt2-roll">0.00</b>° · <span id="belt2-track">fora da pista</span>
+      </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <h3 class="belt-h3" style="margin:0">Picos G desde o último reset</h3>
+        <div class="grow"></div>
+        <label class="ck-belt"><input id="auto-g-scale" type="checkbox"> Autoajustar escalas</label>
+        <span id="auto-g-scale-status" class="muted">Inativo</span>
+        <button id="reset-g-peaks">Zerar picos G</button>
+      </div>
+      <div class="gpeak-grid">
+        <div class="gpeak-card" id="gpeak-lat-card">
+          <div class="name">Lateral · escala <b id="gpeak-lat-limit">1.50</b> g</div>
+          <div class="peak">|G| máx. <span id="gpeak-lat-abs">0.00</span> g</div>
+          <div class="ends">Esq. <span id="gpeak-lat-neg">0.00</span> g · Dir. +<span id="gpeak-lat-pos">0.00</span> g</div>
+        </div>
+        <div class="gpeak-card" id="gpeak-lon-card">
+          <div class="name">Longitudinal · escala <b id="gpeak-lon-limit">1.50</b> g</div>
+          <div class="peak">|G| máx. <span id="gpeak-lon-abs">0.00</span> g</div>
+          <div class="ends">Freio <span id="gpeak-lon-neg">0.00</span> g · Acel. +<span id="gpeak-lon-pos">0.00</span> g</div>
+        </div>
+        <div class="gpeak-card" id="gpeak-vert-card">
+          <div class="name">Vertical · escala <b id="gpeak-vert-limit">1.00</b> g</div>
+          <div class="peak">|G| máx. <span id="gpeak-vert-abs">0.00</span> g</div>
+          <div class="ends">Neg. <span id="gpeak-vert-neg">0.00</span> g · Pos. +<span id="gpeak-vert-pos">0.00</span> g</div>
+        </div>
+      </div>
+      <div class="belt-grid">
+        <div>
+          <div class="axhint" style="margin-bottom:4px">Balanço lateral × longitudinal (clique e segure em modo de teste)</div>
+          <canvas id="gball2" width="260" height="260"></canvas>
+          <div class="belt-readings">Lat <b id="belt2-graph-lat">0.00</b>g · Long <b id="belt2-graph-lon">0.00</b>g · |G| <b id="belt2-mag">0.00</b>g</div>
+        </div>
+        <div>
+          <div class="axhint" style="margin-bottom:4px">Aceleração vertical compensada por pitch e roll</div>
+          <canvas id="vchart2"></canvas>
+          <div class="belt-readings">Vert bruto <b id="belt2-graph-vert">0.00</b>g · Vert compensado <b id="belt2-vertac">0.00</b>g · Pico ± <b id="belt2-peak">0.00</b>g</div>
+        </div>
+      </div>
+      <h3 class="belt-h3">Histórico do torque enviado · N·m</h3>
+      <canvas id="torquechart2"></canvas>
+      <div class="axhint" id="torquechart2-scale">Escala em N·m · aguardando Kt/Imax</div>
+      <div class="legend" style="margin-top:6px">
+        <span><i style="background:#c586ff"></i>Esquerdo · TY</span>
+        <span><i style="background:#4aa3ff"></i>Direito · TX</span>
+        <span><i style="background:#ffcc44"></i>Pré-tensão</span>
+      </div>
+      <h3 class="belt-h3">Torque calculado — esta aba controla a serial somente quando está ativa</h3>
+      <div class="torque-bars">
+        <div class="tb-block"><div class="tb-label">ESQ · TY</div><div class="tb-track"><div id="bar2-l" class="tb-fill"></div><div id="mark2-l" class="tb-mark"></div></div><div class="tb-value" id="torque2-l">0</div></div>
+        <div class="tb-block"><div class="tb-label">DIR · TX</div><div class="tb-track"><div id="bar2-r" class="tb-fill"></div><div id="mark2-r" class="tb-mark"></div></div><div class="tb-value" id="torque2-r">0</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Compensação, normalização e filtros <span class="tag" id="belt2-save-status">carregando configuração…</span></h2>
+      <div class="belt-sliders">
+        <label>Pré-tensão (N·m) <output id="v-a_pretension">2000</output><input id="a_pretension" type="range" min="0" max="16000" step="100" value="2000"></label>
+        <label>Suavização EMA <output id="v-a_smoothing">0.35</output><input id="a_smoothing" type="range" min="0" max="0.95" step="0.01" value="0.35"></label>
+        <label>Atenuação motor esquerdo <output id="v-a_left_attenuation_pct">100%</output><input id="a_left_attenuation_pct" type="range" min="50" max="100" step="1" value="100"></label>
+        <label>Atenuação motor direito <output id="v-a_right_attenuation_pct">100%</output><input id="a_right_attenuation_pct" type="range" min="50" max="100" step="1" value="100"></label>
+        <label>Ganho lateral (N·m/g) <output id="v-a_k_lat">12000</output><input id="a_k_lat" type="range" min="0" max="32767" step="100" value="12000"></label>
+        <label>Escala lateral máxima <output id="v-a_lat_max_g">1.50 g</output><input id="a_lat_max_g" type="range" min="0.1" max="5" step="0.05" value="1.5"></label>
+        <label>Ganho de frenagem (N·m/g) <output id="v-a_k_lon_brake">8000</output><input id="a_k_lon_brake" type="range" min="0" max="32767" step="100" value="8000"></label>
+        <label>Escala longitudinal máxima <output id="v-a_lon_max_g">1.50 g</output><input id="a_lon_max_g" type="range" min="0.1" max="5" step="0.05" value="1.5"></label>
+        <label>Ganho vertical (N·m/g) <output id="v-a_k_vert">6000</output><input id="a_k_vert" type="range" min="0" max="32767" step="100" value="6000"></label>
+        <label>Escala vertical máxima <output id="v-a_vert_max_g">1.00 g</output><input id="a_vert_max_g" type="range" min="0.1" max="5" step="0.05" value="1"></label>
+        <label>Zona morta lateral <output id="v-a_lat_deadzone_g">0.05 g</output><input id="a_lat_deadzone_g" type="range" min="0" max="0.5" step="0.01" value="0.05"></label>
+        <label>Curva lateral <output id="v-a_lat_curve">0.00</output><input id="a_lat_curve" type="range" min="-1" max="1" step="0.05" value="0"></label>
+        <label>Zona morta longitudinal <output id="v-a_lon_deadzone_g">0.03 g</output><input id="a_lon_deadzone_g" type="range" min="0" max="0.5" step="0.01" value="0.03"></label>
+        <label>Curva longitudinal <output id="v-a_lon_curve">0.00</output><input id="a_lon_curve" type="range" min="-1" max="1" step="0.05" value="0"></label>
+        <label>Zona morta vertical <output id="v-a_vert_deadzone_g">0.10 g</output><input id="a_vert_deadzone_g" type="range" min="0" max="0.5" step="0.01" value="0.10"></label>
+        <label>Curva vertical <output id="v-a_vert_curve">0.00</output><input id="a_vert_curve" type="range" min="-1" max="1" step="0.05" value="0"></label>
+        <label class="ck-belt"><input id="a_subtract_gravity" type="checkbox" checked> Compensar gravidade com pitch/roll</label>
+        <label class="ck-belt"><input id="a_invert_lat" type="checkbox"> Inverter lado lateral</label>
+      </div>
+      <div class="axhint" style="margin-top:12px">Curva negativa responde mais cedo; positiva oferece mais precisão perto de zero. O limitador suave atua antes de 32767.</div>
+      <div class="axhint" id="belt2-config-path" style="margin-top:6px"></div>
+      <div class="cfg-actions">
+        <button id="belt-export">Exportar JSON</button>
+        <button id="belt-import">Importar JSON</button>
+        <input id="belt-import-file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <div id="belt-file-status" class="axhint" role="status"></div>
+    </div>
+    <div class="panel" id="mock-panel2" hidden style="margin-top:14px">
+      <h2>Modo de teste · injeção de sinais</h2>
+      <label class="ck-belt" style="margin-bottom:8px"><input id="auto-demo2" type="checkbox" checked> Gerar estímulos aleatórios automaticamente</label>
+      <div class="axhint" style="margin-bottom:10px">Clique e segure no G-ball para injetar Lat/Long. Solte para liberar. O seno abaixo injeta impactos verticais periódicos.</div>
+      <div class="belt-sliders">
+        <label>Frequência seno vertical (Hz) <output id="v-sine_hz2">0.0</output><input id="sine_hz2" type="range" min="0" max="25" step="0.1" value="0"></label>
+        <label>Amplitude seno vertical (g) <output id="v-sine_amp_g2">0.00</output><input id="sine_amp_g2" type="range" min="0" max="1.5" step="0.01" value="0"></label>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-diag" class="view">
+    <div class="panel" style="margin-bottom:14px">
+      <h2>Diagnóstico bilateral dos motores <span class="tag" id="diag-status">pronto</span></h2>
+      <div class="warn" style="margin:0 0 12px">Execute com os cintos livres e sem uma pessoa presa ao sistema. O teste aplica degraus de torque e sempre termina enviando parada.</div>
+      <div class="diag-controls">
+        <label>Motor testado<select id="diag-axis"><option value="both">Ambos simultaneamente</option><option value="y">Esquerdo · Y</option><option value="x">Direito · X</option></select></label>
+        <label>Nível do degrau <output id="v-diag-level">15%</output><input id="diag-level" type="range" min="5" max="50" step="1" value="15"></label>
+        <label>Duração do degrau <output id="v-diag-duration">500 ms</output><input id="diag-duration" type="range" min="200" max="1000" step="50" value="500"></label>
+        <label>Repetições<select id="diag-repeats"><option>1</option><option selected>2</option><option>3</option></select></label>
+      </div>
+      <label class="ck-belt" style="margin:14px 0"><input id="diag-confirm" type="checkbox"> Confirmo que o mecanismo está livre e é seguro movimentar os motores</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="diag-run" class="primary">Executar teste</button>
+        <button id="diag-stop" class="danger">PARAR TESTE (ESC)</button>
+        <button id="diag-csv" disabled>Salvar CSV</button>
+      </div>
+      <div class="axhint" style="margin-top:10px">O firmware registra comando, comando limitado, corrente Iq, RPM e flags a 200 Hz na RAM. Os dados só trafegam pela serial depois da parada.</div>
+    </div>
+    <div class="panel">
+      <h2>Resultado comparativo</h2>
+      <div class="diag-summary"><div id="diag-summary-y" class="diag-side">Motor esquerdo · aguardando teste</div><div id="diag-summary-x" class="diag-side">Motor direito · aguardando teste</div></div>
+      <canvas id="diag-chart"></canvas>
+      <div class="axhint">Painéis: comando solicitado/aplicado, corrente Iq medida e RPM. Flags destacam limitador, falha de feedback e deadman.</div>
+    </div>
+  </section>
+
+  <section id="view-config" class="view">
+    <div class="panel" style="margin-bottom:14px">
+      <h2>Calibração de encoder <span class="tag">salva na flash</span></h2>
+      <div class="cfg-grid">
+        <div class="cfg-row" style="grid-column:1/-1">
+          <div class="cfg-lab">
+            <div class="n">Usar calibração salva no boot</div>
+            <div class="h">quando ligado, pula o auto-align e restaura offsets do último SAVE_ALIGN</div>
+          </div>
+          <input type="checkbox" id="cfg_align_stored">
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-lab">
+            <div class="n">Motor X</div>
+            <div class="h">salvo: offset <b id="cfg_align_x_offset">—</b> · dir <span id="al_xdir">—</span> · cnt_offset <b id="cfg_align_x_cnt_offset">—</b><br>
+                           agora: offset <b id="al_x_live">—</b> · dir <span id="al_xdir_live">—</span> · cnt_offset <b id="al_x_cnt_live">—</b> · ali <span id="al_x_ali">—</span></div>
+          </div>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-lab">
+            <div class="n">Motor Y</div>
+            <div class="h">salvo: offset <b id="cfg_align_y_offset">—</b> · dir <span id="al_ydir">—</span> · cnt_offset <b id="cfg_align_y_cnt_offset">—</b><br>
+                           agora: offset <b id="al_y_live">—</b> · dir <span id="al_ydir_live">—</span> · cnt_offset <b id="al_y_cnt_live">—</b> · ali <span id="al_y_ali">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cfg-actions">
+        <button id="cfg-savealign" class="primary">💾 Salvar calibração atual (SAVE_ALIGN)</button>
+        <button id="cfg-clearalign" class="danger">Limpar (força re-align no próximo boot)</button>
+      </div>
+      <div id="cfg-align-status" class="axhint" style="margin-top:10px">— aguardando dados —</div>
+    </div>
+
+    <div class="panel">
+      <h2>Configuração persistente
+        <span class="tag">EEPROM · pages 64/96</span>
+        <span class="tag" style="border-color:#ffcc44;color:#ffcc44">borda amarela = precisa reboot</span>
+      </h2>
+      <div id="cfg-fields" class="cfg-grid"></div>
+      <div class="cfg-actions">
+        <button id="cfg-reload">↻ Recarregar da placa</button>
+        <button id="cfg-apply" class="primary">Aplicar em runtime</button>
+        <button id="cfg-save"  class="primary">💾 Aplicar + salvar na flash</button>
+        <button id="cfg-reset" class="danger">Reset ao padrão</button>
+        <button id="motor-export">Exportar JSON</button>
+        <button id="motor-import">Importar JSON</button>
+        <input id="motor-import-file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <div id="cfg-status" class="axhint" style="margin-top:10px">— desconectado ou aba nunca aberta —</div>
+    </div>
+  </section>
+
+  <section id="view-console" class="view">
+    <div class="panel">
+      <h2>Console serial (dados brutos)</h2>
+      <div id="log"></div>
+      <div class="cmdrow">
+        <input id="cmd" placeholder="comando (T5000, TY3000, TX-2000, E, EY, S) — Enter envia" autocomplete="off">
+        <button id="send">Enviar</button>
+      </div>
+      <div class="quick">
+        <button data-cmd="S">S · status</button>
+        <button data-cmd="E">E · stop tudo</button>
+        <button data-cmd="TY0">TY0</button>
+        <button data-cmd="TX0">TX0</button>
+        <button id="clearlog">limpar log</button>
+        <label class="ck" style="margin-left:auto"><input type="checkbox" id="autoscroll" checked> auto-scroll</label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const BAUD=115200, WIN=15, A2BIT=50;
+const $=id=>document.getElementById(id);
+let uiLanguage=localStorage.getItem("hoverbelt-language")||"pt-BR";
+const ui=(pt,en)=>uiLanguage==="en"?en:pt;
+const TEXT_EN={
+  "Exportar JSON":"Export JSON","Importar JSON":"Import JSON",
+  "Conectar":"Connect","Desconectar":"Disconnect","conectado":"connected","desconectado":"disconnected",
+  "Bateria:":"Battery:","Belt Tensioner · mapeamento avançado":"Belt Tensioner · advanced mapping",
+  "torque unipolar":"unipolar torque","Motors Dash":"Motor Dashboard","Config":"Settings","Console":"Console",
+  "Diagnóstico":"Diagnostics","Diagnóstico bilateral dos motores":"Bilateral motor diagnostics","pronto":"ready",
+  "Execute com os cintos livres e sem uma pessoa presa ao sistema. O teste aplica degraus de torque e sempre termina enviando parada.":"Run with the belts free and nobody restrained by the system. The test applies torque steps and always finishes by sending stop.",
+  "Motor testado":"Motor under test","Ambos simultaneamente":"Both simultaneously","Nível do degrau":"Step level","Duração do degrau":"Step duration","Repetições":"Repetitions",
+  "Confirmo que o mecanismo está livre e é seguro movimentar os motores":"I confirm the mechanism is clear and it is safe to move the motors",
+  "Executar teste":"Run test","PARAR TESTE (ESC)":"STOP TEST (ESC)","Salvar CSV":"Save CSV",
+  "O firmware registra comando, comando limitado, corrente Iq, RPM e flags a 200 Hz na RAM. Os dados só trafegam pela serial depois da parada.":"Firmware records command, limited command, Iq current, RPM and flags at 200 Hz in RAM. Data travels over serial only after stopping.",
+  "Resultado comparativo":"Comparison results","Motor esquerdo · aguardando teste":"Left motor · waiting for test","Motor direito · aguardando teste":"Right motor · waiting for test",
+  "Painéis: comando solicitado/aplicado, corrente Iq medida e RPM. Flags destacam limitador, falha de feedback e deadman.":"Panels: requested/applied command, measured Iq current and RPM. Flags highlight limiter, feedback fault and deadman.",
+  "tensão esq · corrente dir · 0 ao centro":"left voltage · right current · zero centered",
+  "Modo de teste aleatório":"Random test mode","ARMAR":"ARM","PARAR (ESC)":"STOP (ESC)",
+  "Balanço lateral × longitudinal (clique e segure em modo de teste)":"Lateral × longitudinal balance (click and hold in test mode)",
+  "Aceleração vertical compensada por pitch e roll":"Vertical acceleration compensated by pitch and roll",
+  "Vert bruto":"Raw vertical","Vert compensado":"Compensated vertical","Pico ±":"Peak ±",
+  "Picos G desde o último reset":"G peaks since last reset","Zerar picos G":"Reset G peaks",
+  "Lateral · escala":"Lateral · scale","Longitudinal · escala":"Longitudinal · scale","Vertical · escala":"Vertical · scale",
+  "|G| máx.":"Max |G|","Esq.":"Left","Dir.":"Right","Freio":"Brake","Acel.":"Accel.","Neg.":"Neg.","Pos.":"Pos.",
+  "Histórico do torque enviado · N·m":"Output torque history · N·m",
+  "Esquerdo · TY":"Left · TY","Direito · TX":"Right · TX","Pré-tensão":"Preload",
+  "Torque calculado — esta aba controla a serial somente quando está ativa":"Calculated torque — this tab controls serial only while active",
+  "Compensação, normalização e filtros":"Compensation, normalization and filters",
+  "carregando configuração…":"loading settings…","Pré-tensão (N·m)":"Preload (N·m)",
+  "Suavização EMA":"EMA smoothing","Atenuação motor esquerdo":"Left motor attenuation","Atenuação motor direito":"Right motor attenuation","Ganho lateral (N·m/g)":"Lateral gain (N·m/g)",
+  "Escala lateral máxima":"Maximum lateral scale","Ganho de frenagem (N·m/g)":"Braking gain (N·m/g)",
+  "Escala longitudinal máxima":"Maximum longitudinal scale","Ganho vertical (N·m/g)":"Vertical gain (N·m/g)",
+  "Escala vertical máxima":"Maximum vertical scale","Zona morta lateral":"Lateral dead zone",
+  "Curva lateral":"Lateral curve","Zona morta longitudinal":"Longitudinal dead zone",
+  "Curva longitudinal":"Longitudinal curve","Zona morta vertical":"Vertical dead zone","Curva vertical":"Vertical curve",
+  "Compensar gravidade com pitch/roll":"Compensate gravity using pitch/roll","Inverter lado lateral":"Invert lateral side",
+  "Curva negativa responde mais cedo; positiva oferece mais precisão perto de zero. O limitador suave atua antes de 32767.":"A negative curve responds earlier; a positive curve gives more precision near zero. The soft limiter acts before 32767.",
+  "Modo de teste · injeção de sinais":"Test mode · signal injection",
+  "Gerar estímulos aleatórios automaticamente":"Generate random stimuli automatically",
+  "Clique e segure no G-ball para injetar Lat/Long. Solte para liberar. O seno abaixo injeta impactos verticais periódicos.":"Click and hold the G-ball to inject lateral/longitudinal acceleration. Release to return control. The sine wave below injects periodic vertical impacts.",
+  "Frequência seno vertical (Hz)":"Vertical sine frequency (Hz)","Amplitude seno vertical (g)":"Vertical sine amplitude (g)",
+  "Calibração de encoder":"Encoder calibration","salva na flash":"stored in flash","Usar calibração salva no boot":"Use saved calibration at startup",
+  "quando ligado, pula o auto-align e restaura offsets do último SAVE_ALIGN":"when enabled, skips auto-alignment and restores offsets from the last SAVE_ALIGN",
+  "Salvar calibração atual (SAVE_ALIGN)":"Save current calibration (SAVE_ALIGN)","Limpar (força re-align no próximo boot)":"Clear (forces alignment on next startup)",
+  "💾 Salvar calibração atual (SAVE_ALIGN)":"💾 Save current calibration (SAVE_ALIGN)",
+  "Configuração persistente":"Persistent settings","valores com":"values marked","exigem reboot após salvar":"require a restart after saving",
+  "Recarregar da placa":"Reload from board","Aplicar em runtime":"Apply at runtime","Aplicar + salvar na flash":"Apply + save to flash","Reset ao padrão":"Reset to defaults",
+  "↻ Recarregar da placa":"↻ Reload from board","💾 Aplicar + salvar na flash":"💾 Apply + save to flash",
+  "Console serial (dados brutos)":"Serial console (raw data)","Enviar":"Send","limpar log":"clear log","auto-scroll":"auto-scroll",
+  "Posição":"Position","Torque aplicado":"Applied torque","I resultante":"Resultant current","Zerar":"Zero",
+  "Zerar (TY0)":"Zero (TY0)","Zerar (TX0)":"Zero (TX0)","E · stop tudo":"E · stop all",
+  "■ STOP Y (EY)":"■ STOP Y (EY)","■ STOP X (EX)":"■ STOP X (EX)",
+  "Tensão":"Voltage","pwml · esquerdo":"pwml · left","pwmr · direito":"pwmr · right",
+  "retornar a 0 ao soltar":"return to zero on release","erros":"errors","salvo:":"saved:","agora:":"current:",
+  "Inverter direção X":"Invert X direction","Inverter direção Y":"Invert Y direction","Corrente máx. motor":"Maximum motor current",
+  "Corrente máx. DC-link":"Maximum DC-link current","RPM máx.":"Maximum RPM","Constante de torque Kt":"Torque constant Kt",
+  "Rampa de sobretensão brake":"Brake overvoltage ramp","Resistor de freio":"Brake resistor","Sensibilidade ativação":"Activation sensitivity",
+  "Regen máx.":"Maximum regeneration","Rampa sobretensão — início":"Overvoltage ramp — start","Rampa sobretensão — fim":"Overvoltage ramp — end",
+  "Corrente de calibração X":"X calibration current","Corrente de calibração Y":"Y calibration current","Ciclos elétricos por sweep":"Electrical cycles per sweep",
+  "Bateria nominal":"Nominal battery voltage","FOC target bandwidth":"FOC target bandwidth","aplica só no próximo boot":"applies only after restart",
+  "fora da pista":"off track","na pista":"on track","teste explícito":"explicit test","aguardando sessão":"waiting for session",
+  "backend desconectado":"backend disconnected","teste aleatório ativo":"random test active","iRacing na pista":"iRacing on track",
+  "fora da pista · pré-tensão disponível":"off track · pretension available","aguardando iRacing · pré-tensão disponível":"waiting for iRacing · pretension available",
+  "JSON · salvamento automático":"JSON · automatic saving","erro ao salvar/carregar":"save/load error"
+  ,"Autoajustar escalas pelos picos (+10%)":"Auto-adjust scales from peaks (+10%)"
+  ,"Autoajustar escalas":"Auto-adjust scales"
+  ,"Inativo":"Off"
+  ,"g · Dir. +":"g · Right +"
+  ,"g · Acel. +":"g · Accel. +"
+  ,"g · Vert compensado":"g · Compensated vertical"
+  ,"g · Pico ±":"g · Peak ±"
+  ,"ESQ · TY":"LEFT · TY"
+  ,"DIR · TX":"RIGHT · TX"
+  ,"salvo: offset":"saved: offset"
+  ,"agora: offset":"current: offset"
+  ,"— aguardando dados —":"— waiting for data —"
+  ,"borda amarela = precisa reboot":"yellow border = restart required"
+  ,"enc_cpr · aplica só no próximo boot":"enc_cpr · applies only after restart"
+  ,"bat_nominal · aplica só no próximo boot":"bat_nominal · applies only after restart"
+  ,"target_bw_hz · aplica só no próximo boot":"target_bw_hz · applies only after restart"
+  ,"— desconectado ou aba nunca aberta —":"— disconnected or tab not yet loaded —"
+  ,"frames — · erros — · slew —":"frames — · errors — · slew —"
+  ,"Escala automática simétrica · janela  15  s":"Symmetric automatic scale · 15 s window"
+};
+const TEXT_PT=Object.fromEntries(Object.entries(TEXT_EN).map(([pt,en])=>[en,pt]));
+const CONTROL_TIPS={
+  "motor-export":["Exporta os valores exibidos; não inclui a calibração dos encoders.","Exports displayed values; encoder calibration is excluded."],
+  "motor-import":["Carrega um JSON para revisão, sem gravar na placa. Desarma o sistema.","Loads a JSON for review without writing to the controller. Disarms the system."],
+  "belt-export":["Exporta os ajustes de geração de torque e escala automática.","Exports torque generation settings and automatic scaling."],
+  "belt-import":["Substitui e salva os ajustes no servidor. Desarma o sistema.","Replaces and saves settings on the server. Disarms the system."],
+  connect:["Abre ou fecha a conexão serial USB com o controlador dos motores.","Opens or closes the USB serial connection to the motor controller."],
+  "belt2-test-mode":["Substitui a telemetria do iRacing por sinais sintéticos. Ativar ou desativar interrompe os motores.","Replaces iRacing telemetry with synthetic signals. Enabling or disabling it stops the motors."],
+  "belt2-arm":["Autoriza o envio de torque. Sem jogo ou fora da pista, aplica somente a pré-tensão com rampa de 3 segundos.","Authorizes torque output. Without the game or while off track, applies only pretension with a 3-second ramp."],
+  "belt2-panic":["Parada imediata: limpa a fila, envia E e desarma o sistema.","Immediate stop: clears the queue, sends E, and disarms the system."],
+  "diag-axis":["Seleciona os dois motores juntos ou apenas um eixo para comparar respostas.","Selects both motors together or one axis for response comparison."],
+  "diag-level":["Amplitude do degrau entre 5% e 50% da escala. Comece baixo.","Step amplitude from 5% to 50% of full scale. Start low."],
+  "diag-duration":["Tempo durante o qual o degrau de torque permanece aplicado.","How long the torque step remains applied."],
+  "diag-repeats":["Repete o degrau para verificar consistência e aquecimento.","Repeats the step to check consistency and heating."],
+  "diag-confirm":["Confirmação obrigatória antes de habilitar movimento no modo de diagnóstico.","Required confirmation before enabling motion in diagnostic mode."],
+  "diag-run":["Inicia captura local, aplica o teste e baixa os dados somente após parar.","Starts local capture, applies the test and downloads data only after stopping."],
+  "diag-stop":["Envia parada imediatamente, encerra a captura e solicita os dados já gravados.","Immediately sends stop, ends capture and requests the recorded data."],
+  "diag-csv":["Salva a última captura como CSV para análise externa.","Saves the latest capture as CSV for external analysis."],
+  "diag-chart":["Compara comando, corrente Iq e RPM dos dois motores ao longo do teste.","Compares command, Iq current and RPM for both motors throughout the test."],
+  gball2:["Mostra as acelerações lateral e longitudinal compensadas; no modo de teste também permite injetá-las.","Shows compensated lateral and longitudinal acceleration; in test mode it also lets you inject them."],
+  vchart2:["Histórico da aceleração vertical após compensar a gravidade pela inclinação do carro.","History of vertical acceleration after compensating gravity for vehicle attitude."],
+  torquechart2:["Histórico em N·m dos comandos calculados para os motores esquerdo e direito.","N·m history of commands calculated for the left and right motors."],
+  "reset-g-peaks":["Zera os máximos positivos e negativos acumulados nos três eixos. Não altera os limitadores configurados.","Clears accumulated positive and negative peaks on all three axes. It does not change the configured limiters."],
+  "auto-g-scale":["Aprende as escalas lateral, longitudinal e vertical acima de 32 km/h em pista. Rejeita picos isolados, suaviza a convergência e recomeça em 1 g a cada entrada na pista.","Learns lateral, longitudinal and vertical scales above 20 mph on track. It rejects isolated spikes, smooths convergence and restarts at 1 g on each track entry."],
+  "gpeak-lat-card":["Compara os maiores G laterais medidos com a escala lateral configurada.","Compares the highest measured lateral G with the configured lateral scale."],
+  "gpeak-lon-card":["Compara os maiores G de frenagem e aceleração com a escala longitudinal configurada.","Compares peak braking and acceleration G with the configured longitudinal scale."],
+  "gpeak-vert-card":["Compara os maiores G verticais compensados com a escala vertical configurada.","Compares peak compensated vertical G with the configured vertical scale."],
+  a_pretension:["Torque mínimo mantido nos dois cintos para eliminar folga.","Minimum torque maintained on both belts to remove slack."],
+  a_smoothing:["Filtra mudanças rápidas. Valores maiores suavizam mais, mas aumentam o atraso.","Filters rapid changes. Higher values smooth more but add delay."],
+  a_left_attenuation_pct:["Reduz linearmente todo o comando final do motor esquerdo, incluindo a pré-tensão. Use 100% no lado mais fraco e reduza o lado mais forte.","Linearly reduces the entire final left motor command, including preload. Keep the weaker side at 100% and reduce the stronger side."],
+  a_right_attenuation_pct:["Reduz linearmente todo o comando final do motor direito, incluindo a pré-tensão. Use 100% no lado mais fraco e reduza o lado mais forte.","Linearly reduces the entire final right motor command, including preload. Keep the weaker side at 100% and reduce the stronger side."],
+  a_k_lat:["Torque máximo adicional por g lateral, aplicado somente ao lado correspondente.","Maximum additional torque per lateral g, applied only to the corresponding side."],
+  a_lat_max_g:["A aceleração lateral que representa 100% do efeito antes da curva.","Lateral acceleration that represents 100% effect before the curve."],
+  a_k_lon_brake:["Torque adicional nos dois cintos por g de frenagem.","Additional torque on both belts per braking g."],
+  a_lon_max_g:["Frenagem que representa 100% do efeito longitudinal.","Braking acceleration that represents 100% longitudinal effect."],
+  a_k_vert:["Torque adicional nos dois cintos por g vertical compensado.","Additional torque on both belts per compensated vertical g."],
+  a_vert_max_g:["Aceleração vertical que representa 100% do efeito.","Vertical acceleration that represents 100% effect."],
+  a_lat_deadzone_g:["Ignora pequenas acelerações laterais e ruído dentro desta faixa.","Ignores small lateral acceleration and noise inside this range."],
+  a_lon_deadzone_g:["Ignora pequenas acelerações longitudinais e ruído dentro desta faixa.","Ignores small longitudinal acceleration and noise inside this range."],
+  a_vert_deadzone_g:["Ignora pequenas vibrações verticais dentro desta faixa.","Ignores small vertical vibrations inside this range."],
+  a_lat_curve:["Negativa reforça curvas leves; positiva prioriza curvas fortes; zero é linear.","Negative boosts mild turns; positive prioritizes strong turns; zero is linear."],
+  a_lon_curve:["Negativa reforça frenagens leves; positiva prioriza frenagens fortes; zero é linear.","Negative boosts light braking; positive prioritizes hard braking; zero is linear."],
+  a_vert_curve:["Negativa revela detalhes pequenos; positiva prioriza impactos fortes; zero é linear.","Negative reveals small details; positive prioritizes strong impacts; zero is linear."],
+  a_subtract_gravity:["Remove dos três eixos a gravidade projetada usando pitch e roll.","Removes projected gravity from all three axes using pitch and roll."],
+  a_invert_lat:["Troca qual motor recebe o efeito lateral para adaptar a montagem física.","Swaps which motor receives lateral effect to match the physical installation."],
+  "auto-demo2":["Gera continuamente manobras sintéticas suaves para testar sem o simulador.","Continuously generates smooth synthetic maneuvers for testing without the simulator."],
+  sine_hz2:["Define a frequência dos impactos verticais sintéticos.","Sets the frequency of synthetic vertical impacts."],
+  sine_amp_g2:["Define a intensidade, em g, dos impactos verticais sintéticos.","Sets the strength, in g, of synthetic vertical impacts."],
+  "cfg-savealign":["Grava na flash os offsets de encoder obtidos no alinhamento atual.","Stores the encoder offsets from the current alignment in flash."],
+  "cfg-clearalign":["Apaga os offsets salvos e força novo alinhamento no próximo boot.","Clears saved offsets and forces a new alignment at the next startup."],
+  "cfg-reload":["Descarta edições locais e lê novamente os valores da placa.","Discards local edits and reloads values from the board."],
+  "cfg-apply":["Aplica os campos alterados na memória, sem gravar na flash.","Applies changed fields in memory without saving to flash."],
+  "cfg-save":["Aplica os campos alterados e grava a configuração na flash.","Applies changed fields and stores the configuration in flash."],
+  "cfg-reset":["Restaura os valores padrão do firmware.","Restores firmware default values."],
+  cmd:["Digite um comando serial manual e pressione Enter.","Enter a manual serial command and press Enter."],
+  send:["Envia o comando digitado para o controlador.","Sends the entered command to the controller."],
+  clearlog:["Remove as linhas exibidas no console local.","Clears the lines shown in the local console."]
+};
+function translateStaticText(){
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  let node;
+  while((node=walker.nextNode())){
+    if(["SCRIPT","STYLE"].includes(node.parentElement?.tagName)) continue;
+    const raw=node._ptSource??node.nodeValue;
+    if(node._ptSource===undefined) node._ptSource=raw;
+    const trimmed=raw.trim();
+    if(!trimmed) continue;
+    let translated=uiLanguage==="en"?(TEXT_EN[trimmed]||trimmed):(TEXT_PT[trimmed]||trimmed);
+    node.nodeValue=raw.replace(trimmed,translated);
+  }
+}
+function applyTooltips(){
+  Object.entries(CONTROL_TIPS).forEach(([id,text])=>{ const el=$(id); if(el) el.title=ui(...text); });
+  document.querySelectorAll(".tab").forEach(el=>{
+    const name=el.textContent.trim();
+    el.title=ui(`Abre a aba ${name}.`,`Opens the ${name} tab.`);
+  });
+  document.querySelectorAll("#cfg-fields input").forEach(el=>{
+    const row=el.closest(".cfg-row"),name=row?.querySelector(".n")?.textContent.trim()||el.id;
+    el.title=ui(`Ajusta ${name}. Respeite os limites indicados pelo campo.`,`Adjusts ${name}. Keep the value within the limits shown by the field.`);
+  });
+  document.querySelectorAll("button,input,canvas,select").forEach(el=>{
+    if(!el.title||el.dataset.i18nGeneratedTitle){
+      el.title=ui("Controle da interface; altere somente quando compreender seu efeito.","Interface control; change it only when you understand its effect.");
+      el.dataset.i18nGeneratedTitle="1";
+    }
+  });
+  document.querySelectorAll("label,.num,.tag,.pill,.tb-block,.tb-value,.belt-readings,.cfg-row,.cfg-lab,.axhint,h2,h3").forEach(el=>{
+    if(el.title&&!el.dataset.i18nGeneratedTitle) return;
+    const name=el.textContent.replace(/\s+/g," ").trim().slice(0,100);
+    if(el.matches(".num,.belt-readings,.tag"))
+      el.title=ui(`Indicador de leitura: ${name}.`,`Readout indicator: ${name}.`);
+    else if(el.matches("label,.cfg-row"))
+      el.title=ui(`Configuração: ${name}. Passe o mouse sobre o controle para ver detalhes.`,`Setting: ${name}. Hover the control for details.`);
+    else
+      el.title=ui(`Seção: ${name}.`,`Section: ${name}.`);
+    el.dataset.i18nGeneratedTitle="1";
+  });
+}
+function applyLanguage(){
+  document.documentElement.lang=uiLanguage;
+  document.title=ui("Painel do Motor + Belt Tensioner","Motor + Belt Tensioner Dashboard");
+  $("language-select").value=uiLanguage;
+  $("cmd").placeholder=ui("comando (T5000, TY3000, TX-2000, E, EY, S) — Enter envia","command (T5000, TY3000, TX-2000, E, EY, S) — press Enter to send");
+  translateStaticText();
+  applyTooltips();
+  beltRefreshTorqueUnits?.();
+  beltUpdateArmUI?.();
+  diagRender?.();
+}
+$("language-select").value=uiLanguage;
+$("language-select").addEventListener("change",e=>{
+  uiLanguage=e.target.value;
+  localStorage.setItem("hoverbelt-language",uiLanguage);
+  applyLanguage();
+});
+document.querySelectorAll(".ws").forEach(e=>e.textContent=WIN);
+
+/* ---------- Web Serial ---------- */
+let port=null,reader=null,writer=null,keepReading=false,rxBuf="";
+const serialEncoder=new TextEncoder();
+let serialWriteTail=Promise.resolve();
+let serialHandshake=null;
+const SERIAL_LAST_PORT_KEY="hoverbelt-last-serial-port";
+const dot=$("dot"),statusEl=$("status"),connectBtn=$("connect");
+if(!("serial" in navigator)){ $("nosupport").style.display="block"; connectBtn.disabled=true; }
+connectBtn.onclick=async()=>{ port?disconnect():connect(); };
+function serialPortInfo(candidate){
+  try{
+    const info=candidate.getInfo();
+    return {
+      usbVendorId:Number.isInteger(info.usbVendorId) ? info.usbVendorId : null,
+      usbProductId:Number.isInteger(info.usbProductId) ? info.usbProductId : null,
+    };
+  }catch{return {usbVendorId:null,usbProductId:null};}
+}
+function serialRememberPort(candidate){
+  try{ localStorage.setItem(SERIAL_LAST_PORT_KEY,JSON.stringify(serialPortInfo(candidate))); }catch{}
+}
+async function serialOpen(candidate,automatic=false){
+  port=candidate;
+  try{
+    await port.open({baudRate:BAUD});
+    writer=port.writable.getWriter(); keepReading=true; rxBuf=""; serialWriteTail=Promise.resolve();
+    readLoop();
+    statusEl.textContent=ui("validando controlador…","validating controller…");
+    connectBtn.disabled=true;
+    const valid=await serialValidateFirmware();
+    connectBtn.disabled=false;
+    if(!valid){
+      await serialCloseCandidate();
+      if(!automatic) log("sys",ui("a porta selecionada não respondeu como controlador Belt Tensioner","the selected port did not respond as a Belt Tensioner controller"));
+      return false;
+    }
+    setConn(true);
+    serialRememberPort(port);
+    log("sys",(automatic ? ui("— reconectado automaticamente @ ","— automatically reconnected @ ") : ui("— conectado @ ","— connected @ "))+BAUD+" baud —");
+    return true;
+  }catch(e){
+    connectBtn.disabled=false;
+    await serialCloseCandidate();
+    log("sys",(automatic ? ui("reconexão automática falhou: ","automatic reconnection failed: ") : ui("falha ao conectar: ","connection failed: "))+e.message);
+    return false;
+  }
+}
+async function connect(){
+  try{ await serialOpen(await navigator.serial.requestPort()); }
+  catch(e){ log("sys",ui("falha ao conectar: ","connection failed: ")+e.message); port=null; }
+}
+async function serialAutoConnect(){
+  if(!("serial" in navigator) || port) return;
+  let remembered;
+  try{ remembered=JSON.parse(localStorage.getItem(SERIAL_LAST_PORT_KEY)||"null"); }catch{remembered=null;}
+  try{
+    const authorized=await navigator.serial.getPorts();
+    const score=candidate=>{
+      const info=serialPortInfo(candidate);
+      return remembered && info.usbVendorId===remembered.usbVendorId && info.usbProductId===remembered.usbProductId ? 0 : 1;
+    };
+    authorized.sort((a,b)=>score(a)-score(b));
+    for(const candidate of authorized){
+      if(await serialOpen(candidate,true)) return;
+    }
+    if(authorized.length) log("sys",ui("reconexão automática: nenhum controlador Belt Tensioner respondeu","automatic reconnection: no Belt Tensioner controller responded"));
+  }catch(e){ log("sys",ui("reconexão automática indisponível: ","automatic reconnection unavailable: ")+e.message); }
+}
+function serialHasFirmwareSignature(line){
+  if(!line.startsWith("TLM ")) return false;
+  const keys=new Set(line.slice(4).trim().split(/\s+/).map(kv=>kv.slice(0,kv.indexOf("="))).filter(Boolean));
+  return keys.has("V") && keys.has("Imax") && keys.has("Kt");
+}
+function serialWaitForSignature(timeoutMs){
+  return new Promise(resolve=>{
+    const probe={timer:null,finish(valid){
+      if(serialHandshake!==probe) return;
+      serialHandshake=null;
+      clearTimeout(probe.timer);
+      resolve(valid);
+    }};
+    serialHandshake=probe;
+    probe.timer=setTimeout(()=>probe.finish(false),timeoutMs);
+  });
+}
+async function serialValidateFirmware(){
+  for(let attempt=0;attempt<3;attempt++){
+    const response=serialWaitForSignature(700);
+    await serialWriteRaw("?TLM\n");
+    if(await response) return true;
+  }
+  return false;
+}
+async function serialCloseCandidate(){
+  keepReading=false;
+  if(serialHandshake) serialHandshake.finish(false);
+  try{if(reader){await reader.cancel();reader.releaseLock();}}catch(e){}
+  try{if(writer){writer.releaseLock();}}catch(e){}
+  try{if(port){await port.close();}}catch(e){}
+  reader=writer=port=null;
+  setConn(false);
+}
+async function disconnect(){
+  keepReading=false;
+  if(diagState.running) diagAbort(false,ui("serial desconectada","serial disconnected"));
+  beltTorquePending=null;
+  try{if(beltState.armed && writer){ await serialWriteRaw("E\n"); }}catch(e){}
+  beltState.armed=false;
+  beltResetArmRamp();
+  try{if(reader){await reader.cancel();reader.releaseLock();}}catch(e){}
+  try{if(writer){writer.releaseLock();}}catch(e){}
+  try{if(port){await port.close();}}catch(e){}
+  reader=writer=port=null; setConn(false); beltUpdateArmUI(); log("sys",ui("— desconectado —","— disconnected —"));
+}
+serialAutoConnect();
+if("serial" in navigator){
+  navigator.serial.addEventListener("connect",()=>serialAutoConnect());
+  navigator.serial.addEventListener("disconnect",event=>{ if(event.target===port) disconnect(); });
+}
+function setConn(on){
+  dot.classList.toggle("on",on);
+  statusEl.textContent=on?ui("conectado","connected"):ui("desconectado","disconnected");
+  connectBtn.textContent=on?ui("Desconectar","Disconnect"):ui("Conectar","Connect"); connectBtn.classList.toggle("primary",!on);
+}
+async function readLoop(){
+  const dec=new TextDecoder();
+  while(port&&port.readable&&keepReading){
+    reader=port.readable.getReader();
+    try{
+      while(true){
+        const {value,done}=await reader.read(); if(done)break;
+        rxBuf+=dec.decode(value,{stream:true});
+        let nl; while((nl=rxBuf.indexOf("\n"))>=0){ const line=rxBuf.slice(0,nl).replace(/\r$/,""); rxBuf=rxBuf.slice(nl+1); onLine(line); }
+      }
+    }catch(e){ log("sys",ui("erro de leitura: ","read error: ")+e.message); }
+    finally{ try{reader.releaseLock();}catch(e){} }
+  }
+}
+function serialWriteRaw(payload){
+  const target=writer;
+  if(!target) return Promise.reject(new Error("serial não conectada"));
+  const operation=serialWriteTail.then(()=>{
+    if(writer!==target) throw new Error("serial desconectada");
+    return target.write(serialEncoder.encode(payload));
+  });
+  serialWriteTail=operation.catch(()=>{});
+  return operation;
+}
+async function send(text, quiet){
+  if(!writer){ if(!quiet) log("sys",ui("não conectado","not connected")); return; }
+  try{ await serialWriteRaw(text+"\n"); if(!quiet) log("tx","» "+text); }
+  catch(e){ if(!quiet) log("sys",ui("erro ao enviar: ","send error: ")+e.message); }
+}
+
+/* ---------- data model ---------- */
+const latest={V:undefined,Imax:undefined,Kt:undefined, Ypos:undefined, Xpos:undefined,
+  YiDC:undefined,YiA:undefined,YiB:undefined,YiC:undefined,YiMotor:undefined,
+  XiDC:undefined,XiA:undefined,XiB:undefined,XiC:undefined,XiMotor:undefined,
+  Yrpm:undefined,Yrv:undefined,Yn:undefined,Yvqcap:undefined,Yfrm:undefined,Yerr:undefined,Yslw:undefined,
+  Xrpm:undefined,Xrv:undefined,Xn:undefined,Xvqcap:undefined,Xfrm:undefined,Xerr:undefined,Xslw:undefined,
+  Ycmd:undefined,Ycap:undefined,Yint:undefined,Ylim:undefined,Ysf:undefined,
+  Xcmd:undefined,Xcap:undefined,Xint:undefined,Xlim:undefined,Xsf:undefined};
+const samples=[]; let lastTLM=-1e9;
+function cntToDeg(c){ if(c===undefined||Number.isNaN(c)) return undefined; let d=c/4096*360; if(d>180)d-=360; return d; }
+function pushSample(){
+  const t=performance.now()/1000;
+  samples.push(Object.assign({t},latest));
+  const cut=t-WIN; while(samples.length&&samples[0].t<cut) samples.shift();
+}
+function num(id,v,d){ if(v!==undefined&&!Number.isNaN(v)) $(id).textContent=v.toFixed(d); }
+function updateMotorCurrent(ax){
+  const ia=latest[ax+"iA"], ib=latest[ax+"iB"], ic=latest[ax+"iC"];
+  if([ia,ib,ic].every(Number.isFinite))
+    latest[ax+"iMotor"]=Math.sqrt((2/3)*(ia*ia+ib*ib+ic*ic));
+}
+function updNums(){
+  num("v_hdr",latest.V,2);
+  for(const ax of ["Y","X"]){
+    for(const k of ["iDC","iMotor"]) num("n_"+ax+"_"+k,latest[ax+k],2);
+    num("n_"+ax+"_pos",latest[ax+"pos"],1);
+    num("n_"+ax+"_rpm",latest[ax+"rpm"],2);
+    const applied=latest[ax+"cmd"], current=latest[ax+"iMotor"];
+    if(Number.isFinite(applied)) $("t_"+ax+"_applied").textContent=applied.toFixed(0);
+    if(Number.isFinite(applied)&&Number.isFinite(current)&&Number.isFinite(latest.Kt)){
+      const torque=applied===0?0:Math.sign(applied)*current*latest.Kt;
+      $("t_"+ax+"_nm").textContent=torque.toFixed(3);
+    }
+    const diag=["frm","err","slw"].map(k=>latest[ax+k]===undefined?"—":latest[ax+k].toFixed(0));
+    $("n_"+ax+"_diag").textContent=`frames ${diag[0]} · erros ${diag[1]} · slew ${diag[2]}`;
+  }
+}
+
+/* ---------- line parsing ---------- */
+function onLine(line){
+  if(serialHandshake && serialHasFirmwareSignature(line)) serialHandshake.finish(true);
+  if(diagHandleLine(line)) return;
+  log("rx",line);
+  if(cfgHandleLine(line)) return;
+  cfgObserveAck(line);
+  const now=performance.now()/1000;
+  if(line.startsWith("TLM ")){
+    line.slice(4).trim().split(/\s+/).forEach(kv=>{
+      const i=kv.indexOf("="); if(i<=0) return;
+      const k=kv.slice(0,i), v=parseFloat(kv.slice(i+1));
+      if(k==="YT"){ if(!Number.isNaN(v)) $("t_Y_applied").textContent=v|0; }
+      else if(k==="XT"){ if(!Number.isNaN(v)) $("t_X_applied").textContent=v|0; }
+      else if(k==="Ypos"){ latest.Ypos=cntToDeg(v); }
+      else if(k==="Xpos"){ latest.Xpos=cntToDeg(v); }
+      else if(k in latest){ latest[k]=v; }
+    });
+    updateMotorCurrent("Y"); updateMotorCurrent("X");
+    beltRefreshTorqueUnits();
+    lastTLM=now; updNums(); pushSample(); return;
+  }
+  let touched=false;
+  const mv=line.match(/BatV:(-?\d+)/); if(mv){ latest.V=parseInt(mv[1],10)/100; touched=true; }
+  if(now-lastTLM>2){
+    const g=re=>{ const m=line.match(re); return m?parseInt(m[1],10)/A2BIT:undefined; };
+    if(/^Y:/.test(line)){
+      const idc=g(/iDC=(-?\d+)/),ia=g(/iA=(-?\d+)/),ib=g(/iB=(-?\d+)/);
+      if(idc!==undefined)latest.YiDC=idc; if(ia!==undefined)latest.YiA=ia; if(ib!==undefined)latest.YiB=ib;
+      if(ia!==undefined&&ib!==undefined)latest.YiC=-(ia+ib);
+      updateMotorCurrent("Y");
+      const rw=line.match(/raw=(\d+)/); if(rw)latest.Ypos=cntToDeg(parseInt(rw[1],10));
+      updNums(); pushSample(); return;
+    }
+    if(/^X:/.test(line)){
+      const idc=g(/iDC=(-?\d+)/),ib=g(/iB=(-?\d+)/),ic=g(/iC=(-?\d+)/);
+      if(idc!==undefined)latest.XiDC=idc; if(ib!==undefined)latest.XiB=ib; if(ic!==undefined)latest.XiC=ic;
+      if(ib!==undefined&&ic!==undefined)latest.XiA=-(ib+ic);
+      updateMotorCurrent("X");
+      const rw=line.match(/raw=(\d+)/); if(rw)latest.Xpos=cntToDeg(parseInt(rw[1],10));
+      updNums(); pushSample(); return;
+    }
+  }
+  if(touched) updNums();
+}
+
+/* ---------- console ---------- */
+const logEl=$("log"); let logLines=0;
+function log(cls,txt){
+  const d=document.createElement("div"); d.className=cls; d.textContent=txt; logEl.appendChild(d);
+  if(++logLines>1500){ logEl.removeChild(logEl.firstChild); logLines--; }
+  if($("autoscroll").checked) logEl.scrollTop=logEl.scrollHeight;
+}
+$("send").onclick=()=>{ const v=$("cmd").value.trim(); if(v){ send(v); $("cmd").value=""; } };
+$("cmd").addEventListener("keydown",e=>{ if(e.key==="Enter")$("send").click(); });
+$("clearlog").onclick=()=>{ logEl.innerHTML=""; logLines=0; };
+document.querySelectorAll(".quick button[data-cmd]").forEach(b=>b.onclick=()=>send(b.dataset.cmd));
+
+/* ---------- isolated motor diagnostics ---------- */
+const diagState={running:false,token:0,data:[],rateHz:200};
+const diagCanvas=$("diag-chart"),diagCtx=diagCanvas.getContext("2d");
+const diagWait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const DIAG_IQ_RAW_PER_AMP=A2BIT*16;
+
+function diagSetStatus(pt,en,bad=false){
+  const el=$("diag-status"); el.textContent=ui(pt,en); el.style.color=bad?"var(--bad)":"";
+}
+function diagHandleLine(line){
+  if(line.startsWith("DGHZ ")){
+    const m=line.match(/DGHZ\s+(\d+)/); if(m) diagState.rateHz=+m[1];
+    return true;
+  }
+  if(line.startsWith("DGHEADER")) return true;
+  if(line.startsWith("DG ")){
+    const v=line.slice(3).split(",").map(Number);
+    if(v.length===10 && v.every(Number.isFinite)) diagState.data.push({t:v[0],Ycmd:v[1],Yapp:v[2],Yiq:v[3],Yrpm:v[4],Xcmd:v[5],Xapp:v[6],Xiq:v[7],Xrpm:v[8],flags:v[9]});
+    return true;
+  }
+  if(line==="DGE"){
+    diagState.running=false;
+    diagSetStatus(`${diagState.data.length} amostras recebidas`,`${diagState.data.length} samples received`);
+    $("diag-csv").disabled=diagState.data.length===0;
+    diagRender();
+    return true;
+  }
+  if(line.startsWith("OK DG") || line.startsWith("ERR DG")){
+    if(line.startsWith("ERR")) diagSetStatus(line,line,true);
+    return true;
+  }
+  return false;
+}
+
+function diagCommand(axis,value){ return axis==="y"?`TY${value}`:axis==="x"?`TX${value}`:`T${value}`; }
+async function diagHold(axis,value,duration,token){
+  const end=performance.now()+duration;
+  while(diagState.running && token===diagState.token && performance.now()<end){
+    await send(diagCommand(axis,value),true);
+    await diagWait(50);
+  }
+}
+function diagAbort(download=true,reason){
+  const wasRunning=diagState.running;
+  diagState.running=false; diagState.token++;
+  if(writer){
+    send("E",true); send("DSTOP",true);
+    if(download) setTimeout(()=>send("DDUMP",true),100);
+  }
+  if(reason) diagSetStatus(reason,reason,true);
+  else if(wasRunning) diagSetStatus("teste interrompido","test interrupted",true);
+}
+async function diagRun(){
+  if(!writer){ diagSetStatus("conecte a serial primeiro","connect serial first",true); return; }
+  if(!$("diag-confirm").checked){ diagSetStatus("confirme a condição segura","confirm the safe condition",true); return; }
+  if(diagState.running) return;
+  if(beltState.armed) beltEmergencyStop(ui("início do diagnóstico","diagnostic test started"));
+  const axis=$("diag-axis").value;
+  const value=Math.round(BELT_TORQUE_MAX*(+$('diag-level').value/100));
+  const duration=+$('diag-duration').value,repeats=+$('diag-repeats').value;
+  if(repeats*(250+duration+350)>2400){
+    diagSetStatus("teste longo demais para o buffer; reduza duração ou repetições","test is too long for the buffer; reduce duration or repetitions",true);
+    return;
+  }
+  const token=++diagState.token;
+  diagState.running=true; diagState.data=[]; $("diag-csv").disabled=true;
+  diagSetStatus("capturando localmente…","capturing locally…");
+  await send("E",true); await diagWait(80); await send("DSTART",true); await diagWait(80);
+  for(let i=0;i<repeats && diagState.running && token===diagState.token;i++){
+    await diagHold(axis,0,250,token);
+    await diagHold(axis,value,duration,token);
+    await diagHold(axis,0,350,token);
+  }
+  if(!diagState.running || token!==diagState.token) return;
+  diagState.running=false;
+  await send("E",true); await diagWait(60); await send("DSTOP",true); await diagWait(100);
+  diagSetStatus("baixando captura…","downloading capture…");
+  await send("DDUMP",true);
+}
+
+function diagStats(axis){
+  const d=diagState.data, app=axis+"app",iq=axis+"iq",rpm=axis+"rpm";
+  const cmd=axis+"cmd";
+  let segmentStart=null;
+  const active=d.filter(s=>{
+    if(Math.abs(s[cmd])<=100){segmentStart=null;return false;}
+    if(segmentStart===null)segmentStart=s.t;
+    return s.t-segmentStart>=150;
+  });
+  const peakApp=Math.max(0,...d.map(s=>Math.abs(s[app])));
+  const peakIq=Math.max(0,...d.map(s=>Math.abs(s[iq]/DIAG_IQ_RAW_PER_AMP)));
+  const steadyIq=active.length?active.reduce((sum,s)=>sum+Math.abs(s[iq]/DIAG_IQ_RAW_PER_AMP),0)/active.length:NaN;
+  const peakRpm=Math.max(0,...d.map(s=>Math.abs(s[rpm]/16)));
+  const expected=Number.isFinite(latest.Imax)&&active.length?active.reduce((sum,s)=>sum+Math.abs(s[app])/BELT_TORQUE_MAX*latest.Imax,0)/active.length:NaN;
+  const tracking=expected>0?steadyIq/expected*100:NaN;
+  const overshoot=steadyIq>0?(peakIq/steadyIq-1)*100:NaN;
+  const limMask=axis==="Y"?1:2,faultMask=axis==="Y"?16:32;
+  const limited=d.filter(s=>s.flags&limMask).length;
+  const faults=d.filter(s=>s.flags&faultMask).length;
+  let rise=NaN;
+  const firstActive=d.filter(s=>Math.abs(s[cmd])>100);
+  if(firstActive.length && Number.isFinite(steadyIq)){
+    const start=firstActive[0].t,threshold=steadyIq*.9,hit=firstActive.find(s=>Math.abs(s[iq]/DIAG_IQ_RAW_PER_AMP)>=threshold);
+    if(hit) rise=hit.t-start;
+  }
+  return {peakApp,peakIq,steadyIq,peakRpm,expected,tracking,overshoot,limited,faults,rise};
+}
+function diagSummary(axis,id,namePt,nameEn){
+  if(!diagState.data.length){ $(id).textContent=ui(namePt+" · aguardando teste",nameEn+" · waiting for test"); return; }
+  const s=diagStats(axis);
+  $(id).textContent=ui(
+    `${namePt}\nComando aplicado máx.: ${s.peakApp}\nIq estável: ${Number.isFinite(s.steadyIq)?s.steadyIq.toFixed(2):"--"} A\nIq pico: ${s.peakIq.toFixed(2)} A\nIq esperado aplicado: ${Number.isFinite(s.expected)?s.expected.toFixed(2):"--"} A\nAcompanhamento: ${Number.isFinite(s.tracking)?s.tracking.toFixed(0)+"%":"--"}\nOvershoot: ${Number.isFinite(s.overshoot)?s.overshoot.toFixed(0)+"%":"--"}\nSubida a 90%: ${Number.isFinite(s.rise)?s.rise+" ms":"--"}\nRPM MT6701 máx.: ${s.peakRpm.toFixed(1)}\nLimitador/falha: ${s.limited}/${s.faults}`,
+    `${nameEn}\nMax applied command: ${s.peakApp}\nSteady Iq: ${Number.isFinite(s.steadyIq)?s.steadyIq.toFixed(2):"--"} A\nPeak Iq: ${s.peakIq.toFixed(2)} A\nExpected applied Iq: ${Number.isFinite(s.expected)?s.expected.toFixed(2):"--"} A\nTracking: ${Number.isFinite(s.tracking)?s.tracking.toFixed(0)+"%":"--"}\nOvershoot: ${Number.isFinite(s.overshoot)?s.overshoot.toFixed(0)+"%":"--"}\n90% rise: ${Number.isFinite(s.rise)?s.rise+" ms":"--"}\nMax MT6701 RPM: ${s.peakRpm.toFixed(1)}\nLimiter/fault: ${s.limited}/${s.faults}`);
+}
+function diagRender(){
+  diagSummary("Y","diag-summary-y","Motor esquerdo","Left motor");
+  diagSummary("X","diag-summary-x","Motor direito","Right motor");
+  const r=diagCanvas.getBoundingClientRect(),dpr=devicePixelRatio||1,w=r.width,h=r.height||500;
+  if(!w)return; diagCanvas.width=Math.round(w*dpr);diagCanvas.height=Math.round(h*dpr);diagCtx.setTransform(dpr,0,0,dpr,0,0);
+  const c=diagCtx;c.clearRect(0,0,w,h);c.font="10px ui-monospace,Consolas,monospace";
+  if(diagState.data.length<2){c.fillStyle="#8b98a8";c.fillText(ui("Execute um teste para exibir as curvas","Run a test to display curves"),12,22);return;}
+  const data=diagState.data,t0=data[0].t,t1=data[data.length-1].t||1,left=58,right=12,bandH=(h-35)/3;
+  const panels=[
+    {name:ui("Comando","Command"),keys:[["Ycmd","#c586ff",true],["Yapp","#c586ff",false],["Xcmd","#4aa3ff",true],["Xapp","#4aa3ff",false]],scale:BELT_TORQUE_MAX,unit:""},
+    {name:"Iq",keys:[["Yiq","#c586ff",false],["Xiq","#4aa3ff",false]],scale:Math.max(1,...data.flatMap(s=>[Math.abs(s.Yiq/DIAG_IQ_RAW_PER_AMP),Math.abs(s.Xiq/DIAG_IQ_RAW_PER_AMP)])),unit:"A",div:DIAG_IQ_RAW_PER_AMP},
+    {name:"RPM MT6701",keys:[["Yrpm","#c586ff",false],["Xrpm","#4aa3ff",false]],scale:Math.max(1,...data.flatMap(s=>[Math.abs(s.Yrpm/16),Math.abs(s.Xrpm/16)])),unit:"rpm",div:16}
+  ];
+  panels.forEach((p,pi)=>{
+    const top=pi*bandH+12,mid=top+bandH/2,plotW=w-left-right;
+    c.strokeStyle="#2a3140";c.setLineDash([]);c.beginPath();c.moveTo(left,mid);c.lineTo(w-right,mid);c.stroke();
+    c.fillStyle="#8b98a8";c.fillText(`${p.name} ±${p.scale.toFixed(p.scale<10?2:0)} ${p.unit}`,4,top+10);
+    p.keys.forEach(([key,color,dashed])=>{c.strokeStyle=color;c.lineWidth=dashed?1:1.7;c.setLineDash(dashed?[4,3]:[]);c.beginPath();data.forEach((s,i)=>{const x=left+(s.t-t0)/(t1-t0)*plotW,v=s[key]/(p.div||1),y=mid-v/p.scale*(bandH*.42);if(i)c.lineTo(x,y);else c.moveTo(x,y);});c.stroke();});
+  });
+  c.setLineDash([]);c.fillStyle="#c586ff";c.fillText(ui("Esquerdo Y","Left Y"),left,h-6);c.fillStyle="#4aa3ff";c.fillText(ui("Direito X","Right X"),left+90,h-6);
+}
+
+$("diag-level").oninput=()=>$("v-diag-level").textContent=$("diag-level").value+"%";
+$("diag-duration").oninput=()=>$("v-diag-duration").textContent=$("diag-duration").value+" ms";
+$("diag-run").onclick=diagRun;
+$("diag-stop").onclick=()=>diagAbort(true);
+$("diag-csv").onclick=()=>{
+  if(!diagState.data.length)return;
+  const head="t_ms,Ycmd,Yapplied,Yiq_raw,Yrpm,Xcmd,Xapplied,Xiq_raw,Xrpm,flags\n";
+  const body=diagState.data.map(s=>[s.t,s.Ycmd,s.Yapp,s.Yiq,s.Yrpm,s.Xcmd,s.Xapp,s.Xiq,s.Xrpm,s.flags].join(",")).join("\n");
+  const url=URL.createObjectURL(new Blob([head+body+"\n"],{type:"text/csv"})),a=document.createElement("a");
+  a.href=url;a.download=`belt-diagnostic-${new Date().toISOString().replace(/[:.]/g,"-")}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+diagRender();
+
+/* ---------- tabs ---------- */
+let activeView = "belt2";
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  if(diagState.running && t.dataset.view!=="diag") diagAbort(true,ui("troca de aba","tab changed"));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active"); $("view-"+t.dataset.view).classList.add("active");
+  activeView = t.dataset.view;
+  if(t.dataset.view==="dash") charts.forEach(c=>c.resize());
+  if(t.dataset.view==="belt2") beltResizeCanvases();
+  if(t.dataset.view==="diag") requestAnimationFrame(diagRender);
+  if(t.dataset.view==="config" && port) cfgRequestDump();
+});
+
+/* ---------- TLM poller ---------- */
+let lastTlmPoll=0;
+setInterval(()=>{
+  if(!port) return;
+  const now=performance.now();
+  if(!beltState.armed && (activeView==="dash" || ((activeView==="belt" || activeView==="belt2") && now-lastTlmPoll>=500))){
+    lastTlmPoll=now;
+    send("?TLM",true);
+  }
+},100);
+
+/* ---------- config tab ---------- */
+const CFG_FIELDS=[
+  {n:"i_mot_max",    l:"Corrente máx. motor",       u:"A",  t:"int",   min:1,  max:50},
+  {n:"i_dc_max",     l:"Corrente máx. DC-link",     u:"A",  t:"int",   min:1,  max:60},
+  {n:"n_mot_max",    l:"RPM máx.",                  u:"rpm",t:"int",   min:1,  max:600},
+  {n:"motor_kt",     l:"Constante de torque Kt",    u:"N·m/A",t:"float",min:0.001,max:65.535,step:0.001},
+  {n:"invert_x",     l:"Inverter direção X",        u:"",   t:"bool"},
+  {n:"invert_y",     l:"Inverter direção Y",        u:"",   t:"bool"},
+  {n:"brk_ramp_ena", l:"Rampa de sobretensão brake",u:"",   t:"bool"},
+  {n:"brake_res",    l:"Resistor de freio",         u:"Ω",  t:"float", min:0.1, max:50,  step:0.01},
+  {n:"brk_res_sens", l:"Sensibilidade ativação",    u:"mA", t:"int",   min:0,   max:10000},
+  {n:"max_regen",    l:"Regen máx.",                u:"mA", t:"int",   min:0,   max:10000},
+  {n:"brk_ov_start", l:"Rampa sobretensão — início",u:"V",  t:"float", min:1,   max:100, step:0.01},
+  {n:"brk_ov_end",   l:"Rampa sobretensão — fim",   u:"V",  t:"float", min:1,   max:100, step:0.01},
+  {n:"align_i_x",    l:"Corrente de calibração X",  u:"A",  t:"float", min:0.1, max:20,   step:0.05},
+  {n:"align_i_y",    l:"Corrente de calibração Y",  u:"A",  t:"float", min:0.1, max:20,   step:0.05},
+  {n:"align_turns_elec", l:"Ciclos elétricos por sweep", u:"", t:"int", min:1, max:10},
+  {n:"enc_cpr",      l:"Encoder CPR",               u:"",   t:"int",   min:1,   max:65000, boot:true},
+  {n:"bat_nominal",  l:"Bateria nominal",           u:"V",  t:"float", min:1,   max:80,   step:0.01, boot:true},
+  {n:"target_bw_hz", l:"FOC target bandwidth",      u:"Hz", t:"int",   min:10,  max:2000, boot:true},
+];
+const cfgState={ boardVals:{}, dirty:new Set(), pendingDump:false, dumpBuf:[] };
+
+function cfgBuildForm(){
+  const g=$("cfg-fields"); g.innerHTML="";
+  CFG_FIELDS.forEach(f=>{
+    const row=document.createElement("div");
+    row.className="cfg-row"+(f.boot?" boot":""); row.dataset.name=f.n;
+    let inp;
+    if(f.t==="bool"){
+      inp=`<input type="checkbox" id="cfg_${f.n}">`;
+    }else{
+      const step=f.step||1;
+      inp=`<input type="number" id="cfg_${f.n}" min="${f.min}" max="${f.max}" step="${step}">`;
+    }
+    row.innerHTML=`
+      <div class="cfg-lab">
+        <div class="n">${f.l}</div>
+        <div class="h">${f.n}${f.boot?" · aplica só no próximo boot":""}</div>
+      </div>
+      ${inp}<span class="u">${f.u}</span>`;
+    g.appendChild(row);
+    const el=row.querySelector("input");
+    el.addEventListener("change",()=>{
+      const cur=cfgReadInput(f);
+      if(cur!==cfgState.boardVals[f.n]) cfgState.dirty.add(f.n); else cfgState.dirty.delete(f.n);
+      row.classList.toggle("dirty",cfgState.dirty.has(f.n));
+    });
+    el.addEventListener("input",()=>el.dispatchEvent(new Event("change")));
+  });
+}
+cfgBuildForm();
+
+function cfgReadInput(f){
+  const el=$("cfg_"+f.n);
+  if(f.t==="bool") return el.checked?1:0;
+  if(f.t==="float") return parseFloat(el.value);
+  return parseInt(el.value,10);
+}
+function cfgWriteInput(f,val){
+  const el=$("cfg_"+f.n);
+  if(f.t==="bool"){ el.checked=!!val; }
+  else if(f.t==="float"){ el.value=val; }
+  else{ el.value=val; }
+}
+function cfgSetStatus(msg,cls){
+  const s=$("cfg-status"); s.textContent=msg; s.className="axhint "+(cls||"");
+}
+
+function cfgRequestDump(){
+  cfgState.pendingDump=true; cfgState.dumpBuf.length=0;
+  cfgSetStatus("carregando…","");
+  send("CFG DUMP");
+}
+function cfgHandleLine(line){
+  if(!cfgState.pendingDump) return false;
+  const t=line.trim();
+  if(t==="CFG {"){ cfgState.dumpBuf.length=0; return true; }
+  if(t==="}"){
+    const vals={};
+    cfgState.dumpBuf.forEach(l=>{
+      const m=l.match(/^\s*(\w+)\s*:\s*(\S+)/);
+      if(!m) return;
+      const k=m[1]; let v=m[2];
+      if(/^-?\d+\.\d+$/.test(v)) v=parseFloat(v);
+      else if(/^-?\d+$/.test(v)) v=parseInt(v,10);
+      vals[k]=v;
+    });
+    cfgState.boardVals=vals;
+    CFG_FIELDS.forEach(f=>{ if(f.n in vals) cfgWriteInput(f,vals[f.n]); });
+    cfgState.dirty.clear();
+    document.querySelectorAll(".cfg-row.dirty").forEach(r=>r.classList.remove("dirty"));
+    if("align_stored" in vals) $("cfg_align_stored").checked = !!vals.align_stored;
+    const showDir=v=> v?"CW (1)":"CCW (0)";
+    if("align_x_offset" in vals) $("cfg_align_x_offset").textContent = vals.align_x_offset;
+    if("align_y_offset" in vals) $("cfg_align_y_offset").textContent = vals.align_y_offset;
+    if("align_x_cnt_offset" in vals) $("cfg_align_x_cnt_offset").textContent = vals.align_x_cnt_offset;
+    if("align_y_cnt_offset" in vals) $("cfg_align_y_cnt_offset").textContent = vals.align_y_cnt_offset;
+    if("align_x_dir" in vals) $("al_xdir").textContent = showDir(vals.align_x_dir);
+    if("align_y_dir" in vals) $("al_ydir").textContent = showDir(vals.align_y_dir);
+    if("align_x_offset_live" in vals) $("al_x_live").textContent = vals.align_x_offset_live;
+    if("align_y_offset_live" in vals) $("al_y_live").textContent = vals.align_y_offset_live;
+    if("align_x_cnt_offset_live" in vals) $("al_x_cnt_live").textContent = vals.align_x_cnt_offset_live;
+    if("align_y_cnt_offset_live" in vals) $("al_y_cnt_live").textContent = vals.align_y_cnt_offset_live;
+    if("align_x_dir_live" in vals) $("al_xdir_live").textContent = showDir(vals.align_x_dir_live);
+    if("align_y_dir_live" in vals) $("al_ydir_live").textContent = showDir(vals.align_y_dir_live);
+    if("align_x_ali" in vals) $("al_x_ali").textContent = vals.align_x_ali?"✓":"✗";
+    if("align_y_ali" in vals) $("al_y_ali").textContent = vals.align_y_ali?"✓":"✗";
+    const bothAli = vals.align_x_ali && vals.align_y_ali;
+    const savedZero = !vals.align_stored;
+    const alStat=$("cfg-align-status");
+    if(vals.align_stored){
+      alStat.textContent=ui("✓ boot vai restaurar offsets salvos (auto-align desligado)","✓ saved offsets will be restored at startup (auto-align disabled)");
+      alStat.className="axhint ok";
+    }else if(bothAli && savedZero){
+      alStat.textContent=ui("○ auto-align feito — clique SAVE_ALIGN para persistir esses offsets","○ auto-align complete — click SAVE_ALIGN to store these offsets");
+      alStat.className="axhint";
+    }else{
+      alStat.textContent=ui("○ boot vai executar auto-align (nenhum offset salvo em uso)","○ auto-align will run at startup (no saved offsets in use)");
+      alStat.className="axhint";
+    }
+    cfgState.pendingDump=false;
+    cfgSetStatus(ui("configuração carregada (","settings loaded (") + Object.keys(vals).length + ui(" campos)"," fields)"),"ok");
+    return true;
+  }
+  cfgState.dumpBuf.push(line);
+  return true;
+}
+
+function cfgObserveAck(line){
+  if(line.startsWith("OK CFG SAVE_ALIGN")){
+    const s=$("cfg-align-status"); s.textContent=ui("✓ calibração salva na flash","✓ calibration saved to flash"); s.className="axhint ok";
+    setTimeout(cfgRequestDump,120);
+  }
+  else if(line.startsWith("ERR CFG SAVE_ALIGN")){
+    const s=$("cfg-align-status"); s.textContent="✗ "+line; s.className="axhint err";
+  }
+  else if(line.startsWith("OK CFG SAVE")) cfgSetStatus(ui("✓ salvo na flash","✓ saved to flash"),"ok");
+  else if(line.startsWith("OK CFG RESET")) cfgSetStatus(ui("↩ voltou ao padrão (não salvo)","↩ defaults restored (not saved)"),"ok");
+  else if(line.startsWith("ERR CFG")) cfgSetStatus("✗ "+line,"err");
+}
+
+async function cfgSendDirtyFields(){
+  const dirty=Array.from(cfgState.dirty);
+  if(!dirty.length){ cfgSetStatus(ui("nada mudou","nothing changed"),"",""); return 0; }
+  for(const name of dirty){
+    const f=CFG_FIELDS.find(x=>x.n===name);
+    const v=cfgReadInput(f);
+    send("CFG "+name+"="+v);
+    await new Promise(r=>setTimeout(r,25));
+  }
+  return dirty.length;
+}
+$("cfg-reload").onclick=()=>{ if(!port){ cfgSetStatus(ui("conecte primeiro","connect first"),"err"); return; } cfgRequestDump(); };
+$("cfg-apply").onclick=async()=>{
+  if(!port){ cfgSetStatus(ui("conecte primeiro","connect first"),"err"); return; }
+  const n=await cfgSendDirtyFields();
+  if(n>0){ cfgSetStatus(ui("aplicado (","applied (")+n+ui(" campos) — CFG SAVE p/ persistir"," fields) — use CFG SAVE to persist"),"ok"); cfgRequestDump(); }
+};
+$("cfg-save").onclick=async()=>{
+  if(!port){ cfgSetStatus(ui("conecte primeiro","connect first"),"err"); return; }
+  await cfgSendDirtyFields();
+  await new Promise(r=>setTimeout(r,50));
+  send("CFG SAVE");
+};
+$("cfg-reset").onclick=()=>{
+  if(!port){ cfgSetStatus("conecte primeiro","err"); return; }
+  if(!confirm("Reset ao padrão — os valores em RAM voltam ao default do firmware. Nada será salvo até você clicar em Aplicar+Salvar. Continua?")) return;
+  send("CFG RESET");
+  setTimeout(cfgRequestDump,80);
+};
+$("cfg-savealign").onclick=async()=>{
+  if(!port){ const s=$("cfg-align-status"); s.textContent=ui("conecte primeiro","connect first"); s.className="axhint err"; return; }
+  if(!confirm(ui("Salvar a calibração atual? Só funciona se ambos motores já se auto-alinharam neste boot (ali=true).","Save the current calibration? This only works if both motors completed auto-alignment during this startup (ali=true)."))) return;
+  send("CFG SAVE_ALIGN");
+};
+$("cfg-clearalign").onclick=async()=>{
+  if(!port){ const s=$("cfg-align-status"); s.textContent=ui("conecte primeiro","connect first"); s.className="axhint err"; return; }
+  if(!confirm(ui("Limpar? No próximo boot os motores farão auto-align de novo.","Clear calibration? The motors will auto-align again at the next startup."))) return;
+  send("CFG align_stored=0");
+  await new Promise(r=>setTimeout(r,60));
+  send("CFG SAVE");
+  setTimeout(cfgRequestDump,150);
+};
+$("cfg_align_stored").addEventListener("change",async e=>{
+  if(!port){ e.target.checked=!e.target.checked; return; }
+  const on = e.target.checked ? 1 : 0;
+  send("CFG align_stored="+on);
+  await new Promise(r=>setTimeout(r,60));
+  send("CFG SAVE");
+});
+
+/* ---------- axis cards ---------- */
+const CUR=[
+  {k:"iDC",name:"I DC",color:"var(--idc)"},
+  {k:"iMotor",name:"I resultante",color:"var(--ib)"},
+];
+function buildAxisCard(ax){
+  const card=document.createElement("div"); card.className="panel";
+  const nums = `<div class="num"><div class="lbl"><span class="swatch" style="background:#c586ff"></span>Posição</div><div class="val"><span id="n_${ax}_pos">--</span> <span class="u">°</span></div></div>`
+       + `<div class="num"><div class="lbl">RPM MT6701</div><div class="val"><span id="n_${ax}_rpm">--</span> <span class="u">rpm</span></div></div>`
+       + CUR.map(c=>`<div class="num"><div class="lbl"><span class="swatch" style="background:${c.color}"></span>${c.name}</div><div class="val"><span id="n_${ax}_${c.k}">--</span> <span class="u">A</span></div></div>`).join("")
+       + `<div class="num"><div class="lbl">Torque aplicado</div><div class="val"><span id="t_${ax}_applied">0</span> <span class="u">/32767 · </span><span id="t_${ax}_nm">--</span> <span class="u">N·m</span></div></div>`;
+  card.innerHTML=`
+    <h2>Motor ${ax} <span class="tag">${ax==="Y"?"pwml · esquerdo":"pwmr · direito"}</span></h2>
+    <div class="nums">${nums}</div>
+    <div class="axhint" id="n_${ax}_diag">frames — · erros — · slew —</div>
+    <div class="torque">
+      <div class="row">
+        <input id="t_${ax}_slider" type="range" min="-32767" max="32767" step="1" value="0">
+        <div class="tval" id="t_${ax}_val">0</div>
+      </div>
+      <div class="row">
+        <button id="t_${ax}_stop" class="danger" style="flex:1">■ STOP ${ax} (E${ax})</button>
+        <button id="t_${ax}_zero" style="flex:1">Zerar (T${ax}0)</button>
+      </div>
+      <div class="opts"><label class="ck"><input type="checkbox" id="t_${ax}_spring" checked> retornar a 0 ao soltar</label></div>
+    </div>`;
+  return card;
+}
+["Y","X"].forEach(ax=> $("axcards").appendChild(buildAxisCard(ax)) );
+
+function wireTorque(ax){
+  const sl=$(`t_${ax}_slider`), val=$(`t_${ax}_val`), spring=$(`t_${ax}_spring`);
+  const keepaliveMs=50;
+  let target=0,dirty=false,lastMs=0;
+  sl.addEventListener("input",()=>{
+    if(beltState.armed) beltEmergencyStop(ui("controle manual do Dashboard","manual Dashboard control"));
+    val.textContent=sl.value;
+    target=parseInt(sl.value,10);
+    dirty=true;
+  });
+  const rel=()=>{ if(spring.checked){ sl.value=0; val.textContent="0"; target=0; dirty=true; } };
+  sl.addEventListener("pointerup",rel); sl.addEventListener("mouseup",rel); sl.addEventListener("touchend",rel);
+  $(`t_${ax}_stop`).onclick=()=>{ sl.value=0; val.textContent="0"; target=0; dirty=false; send("E"+ax); };
+  $(`t_${ax}_zero`).onclick=()=>{ sl.value=0; val.textContent="0"; target=0; dirty=true; };
+  function pump(){
+    const now=performance.now();
+    if(writer && (dirty || target!==0) && now-lastMs>=keepaliveMs){
+      send("T"+ax+target,true);
+      dirty=false;
+      lastMs=now;
+    }
+    requestAnimationFrame(pump);
+  }
+  requestAnimationFrame(pump);
+}
+["Y","X"].forEach(wireTorque);
+
+/* ---------- charts ---------- */
+function niceSpan(maxAbs,floor){
+  let s=Math.max(maxAbs*1.12,floor);
+  const p=Math.pow(10,Math.floor(Math.log10(s))); const n=s/p, nn=n<=1?1:n<=2?2:n<=5?5:10; return nn*p;
+}
+function fmt(v){ const a=Math.abs(v); return a>=100?v.toFixed(0):a>=10?v.toFixed(1):v.toFixed(2); }
+function makeChart(canvasId,legendId,ax){
+  const cv=$(canvasId), ctx=cv.getContext("2d"); let W=0,H=0;
+  const series=[
+    {key:ax+"pos",name:"Posição", color:"#c586ff", axis:"P", on:true},
+    {key:"V",     name:"Tensão",  color:"#ffcc44", axis:"V", on:true},
+    {key:ax+"iDC",name:"I DC",    color:"#c9d1d9", axis:"I", on:true},
+    {key:ax+"iMotor",name:"I resultante",color:"#38d39f",axis:"I",on:true},
+  ];
+  const leg=$(legendId);
+  series.forEach(s=>{
+    const l=document.createElement("label");
+    l.innerHTML=`<input type="checkbox" ${s.on?"checked":""}><span class="swatch" style="background:${s.color}"></span>${s.name}`;
+    l.querySelector("input").onchange=e=>{ s.on=e.target.checked; };
+    leg.appendChild(l);
+  });
+  function resize(){
+    const dpr=window.devicePixelRatio||1, r=cv.getBoundingClientRect();
+    W=r.width; H=r.height; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function draw(){
+    if(!W){ resize(); if(!W) return; }
+    ctx.clearRect(0,0,W,H);
+    const mL=92,mR=52,mT=14,mB=20, pw=W-mL-mR, ph=H-mT-mB, midY=mT+ph/2;
+    let maxV=0,maxI=0;
+    for(const s of samples){ if(s.V!==undefined) maxV=Math.max(maxV,Math.abs(s.V)); }
+    for(const ser of series){ if(ser.axis==="I"&&ser.on){ for(const s of samples){ const v=s[ser.key]; if(v!==undefined) maxI=Math.max(maxI,Math.abs(v)); } } }
+    const spanP=180, spanV=niceSpan(maxV,5), spanI=niceSpan(maxI,1);
+    const spanOf=a=> a==="P"?spanP : a==="V"?spanV : spanI;
+    ctx.lineWidth=1; ctx.font="11px system-ui";
+    for(let i=-2;i<=2;i++){
+      const y=midY-(i/2)*(ph/2);
+      ctx.strokeStyle="#2a3140"; ctx.globalAlpha=i===0?0.9:0.35;
+      ctx.beginPath(); ctx.moveTo(mL,y); ctx.lineTo(W-mR,y); ctx.stroke(); ctx.globalAlpha=1;
+      ctx.textAlign="right";
+      ctx.fillStyle="#c586ff"; ctx.fillText((90*i).toFixed(0),mL-52,y+3);
+      ctx.fillStyle="#ffcc44"; ctx.fillText(fmt(spanV*i/2),mL-6,y+3);
+      ctx.textAlign="left";
+      ctx.fillStyle="#7fb4ff"; ctx.fillText(fmt(spanI*i/2),W-mR+6,y+3);
+    }
+    const ty=midY-ph/2-2;
+    ctx.textAlign="right";
+    ctx.fillStyle="#c586ff"; ctx.fillText("°",mL-52,ty);
+    ctx.fillStyle="#ffcc44"; ctx.fillText("V",mL-6,ty);
+    ctx.textAlign="left"; ctx.fillStyle="#7fb4ff"; ctx.fillText("A",W-mR+6,ty);
+    if(samples.length<2) return;
+    const t1=performance.now()/1000, t0=t1-WIN, X=t=>mL+(t-t0)/WIN*pw;
+    for(const ser of series){
+      if(!ser.on) continue;
+      const span=spanOf(ser.axis);
+      ctx.strokeStyle=ser.color; ctx.lineWidth=1.6; ctx.beginPath();
+      let st=false, prevV=null;
+      for(const s of samples){
+        const v=s[ser.key];
+        if(v===undefined||Number.isNaN(v)){ st=false; prevV=null; continue; }
+        const x=X(s.t), y=midY-(v/span)*(ph/2);
+        const wrap = ser.axis==="P" && prevV!==null && Math.abs(v-prevV)>180;
+        if(!st || wrap){ ctx.moveTo(x,y); st=true; } else ctx.lineTo(x,y);
+        prevV=v;
+      }
+      ctx.stroke();
+    }
+  }
+  return {resize,draw};
+}
+const charts=[ makeChart("chartY","legY","Y"), makeChart("chartX","legX","X") ];
+window.addEventListener("resize",()=>{ charts.forEach(c=>c.resize()); beltResizeCanvases(); });
+function chartLoop(){ charts.forEach(c=>c.draw()); requestAnimationFrame(chartLoop); }
+charts.forEach(c=>c.resize()); requestAnimationFrame(chartLoop);
+
+/* =============================================================
+ *  Belt Tensioner tab
+ * ============================================================= */
+const BG = 9.80665;
+const BELT_TORQUE_MAX = 32767;
+const BELT_G_BALL = 2.0;
+const BELT_G_VERT = 1.5;
+const BELT_WATCHDOG_MS = 250;
+const BELT_ARM_RAMP_MS = 3000;
+const BELT_CFG_KEYS = ["pretension","k_lat","k_lon_brake","k_vert","deadzone_g","vert_deadzone_g"];
+const BELT_ADV_CFG_KEYS = ["pretension","smoothing","left_attenuation_pct","right_attenuation_pct","k_lat","lat_max_g","k_lon_brake","lon_max_g","k_vert","vert_max_g","lat_deadzone_g","lat_curve","lon_deadzone_g","lon_curve","vert_deadzone_g","vert_curve"];
+
+const beltState = {
+  armed: false, mockEnabled: false, dragging: false,
+  latG: 0, lonG: 0, pretension: 2000,
+  torqueLeft: 0, torqueRight: 0,
+  lastSampleAt: 0, msgs: 0, rateT: performance.now(),
+  ageMs: 0, wsMs: 0, lastSeq: null, wsDrops: 0,
+  telemetryValid: false, driveActive: false,
+  rampStartedAt: null, rampProgress: 0,
+};
+
+function beltResetArmRamp(){
+  beltState.rampStartedAt=null;
+  beltState.rampProgress=0;
+}
+
+function beltPretensionOnlyTorque(){
+  const pretension=Math.max(0,Math.min(BELT_TORQUE_MAX,+$("a_pretension").value||0));
+  const leftAttenuation=Math.max(50,Math.min(100,+$("a_left_attenuation_pct").value||100))/100;
+  const rightAttenuation=Math.max(50,Math.min(100,+$("a_right_attenuation_pct").value||100))/100;
+  return {
+    left:Math.round(pretension*leftAttenuation),
+    right:Math.round(pretension*rightAttenuation),
+  };
+}
+const beltGPeaks = {
+  latNeg: 0, latPos: 0,
+  lonNeg: 0, lonPos: 0,
+  vertNeg: 0, vertPos: 0,
+};
+let beltAutoScaleState=null;
+
+function beltSetAutoScaleState(state){
+  if(!state) return;
+  beltAutoScaleState=state;
+  const enabled=!!state.enabled;
+  if(document.activeElement!==$("auto-g-scale")) $("auto-g-scale").checked=enabled;
+  ["lat","lon","vert"].forEach(axis=>{
+    $("a_"+axis+"_max_g").disabled=enabled;
+    if(enabled && Number.isFinite(+state[axis+"_max_g"])){
+      $("v-a_"+axis+"_max_g").textContent=(+state[axis+"_max_g"]).toFixed(2)+" g auto";
+    }
+  });
+  $("auto-g-scale-status").textContent=!enabled
+    ? ui("Inativo","Off")
+    : state.learning
+      ? ui("Aprendendo acima de 32 km/h","Learning above 20 mph")
+      : ui("Pausado: entre na pista e passe de 32 km/h","Paused: get on track and exceed 20 mph");
+  beltRenderGPeaks();
+}
+
+function beltRenderGPeaks(){
+  const axes = [
+    ["lat",beltGPeaks.latNeg,beltGPeaks.latPos,"a_lat_max_g"],
+    ["lon",beltGPeaks.lonNeg,beltGPeaks.lonPos,"a_lon_max_g"],
+    ["vert",beltGPeaks.vertNeg,beltGPeaks.vertPos,"a_vert_max_g"],
+  ];
+  axes.forEach(([axis,neg,pos,limitId])=>{
+    $("gpeak-"+axis+"-neg").textContent=neg>0 ? "-"+neg.toFixed(2) : "0.00";
+    $("gpeak-"+axis+"-pos").textContent=pos.toFixed(2);
+    $("gpeak-"+axis+"-abs").textContent=Math.max(neg,pos).toFixed(2);
+    const limit=$(limitId), autoValue=beltAutoScaleState?.[axis+"_max_g"];
+    if(limit) $("gpeak-"+axis+"-limit").textContent=(beltAutoScaleState?.enabled && Number.isFinite(+autoValue) ? +autoValue : +limit.value).toFixed(2);
+  });
+}
+
+function beltCaptureGPeaks(latG,lonG,vertG){
+  if(![latG,lonG,vertG].every(Number.isFinite)) return;
+  beltGPeaks.latNeg=Math.max(beltGPeaks.latNeg,-latG,0);
+  beltGPeaks.latPos=Math.max(beltGPeaks.latPos, latG,0);
+  beltGPeaks.lonNeg=Math.max(beltGPeaks.lonNeg,-lonG,0);
+  beltGPeaks.lonPos=Math.max(beltGPeaks.lonPos, lonG,0);
+  beltGPeaks.vertNeg=Math.max(beltGPeaks.vertNeg,-vertG,0);
+  beltGPeaks.vertPos=Math.max(beltGPeaks.vertPos, vertG,0);
+  beltRenderGPeaks();
+}
+
+let beltTorquePending=null, beltTorquePumping=false;
+const beltSerialMetrics={dropped:0, queueMs:0, writeMs:0};
+const beltEma=(current,next)=>current ? current*0.8+next*0.2 : next;
+
+function beltQueueTorque(left,right,seq){
+  if(beltTorquePending) beltSerialMetrics.dropped++;
+  beltTorquePending={left,right,seq,queuedAt:performance.now()};
+  if(!beltTorquePumping) beltPumpTorque();
+}
+
+async function beltPumpTorque(){
+  beltTorquePumping=true;
+  try{
+    while(beltTorquePending && beltState.armed && writer){
+      const item=beltTorquePending;
+      beltTorquePending=null;
+      const writeStarted=performance.now();
+      beltSerialMetrics.queueMs=beltEma(beltSerialMetrics.queueMs,writeStarted-item.queuedAt);
+      const payload=item.left===item.right
+        ? `T${item.left}\n`
+        : `TY${item.left}\nTX${item.right}\n`;
+      await serialWriteRaw(payload);
+      beltSerialMetrics.writeMs=beltEma(beltSerialMetrics.writeMs,performance.now()-writeStarted);
+    }
+  }catch(e){
+    log("sys","belt serial: "+e.message);
+  }finally{
+    beltTorquePumping=false;
+    if(beltTorquePending && beltState.armed && writer) beltPumpTorque();
+  }
+}
+
+setInterval(()=>{
+  $("belt-age-tag").textContent=`app ${beltState.ageMs.toFixed(0)} ms`;
+  $("belt-ws-tag").textContent=`WS ${beltState.wsMs.toFixed(0)} ms`;
+  $("belt-serial-tag").textContent=`serial ${(beltSerialMetrics.queueMs+beltSerialMetrics.writeMs).toFixed(1)} ms`;
+  $("belt-drop-tag").textContent=`descartes ${beltSerialMetrics.dropped} · WS ${beltState.wsDrops}`;
+},250);
+
+function beltNmPerCount(){
+  return Number.isFinite(latest.Kt) && Number.isFinite(latest.Imax)
+    ? latest.Kt*latest.Imax/BELT_TORQUE_MAX : undefined;
+}
+function beltFormatTorqueSetting(key,value){
+  const scale=beltNmPerCount(), perG=key!=="pretension";
+  return Number.isFinite(scale)
+    ? `${value} · ${(value*scale).toFixed(3)} N·m${perG?"/g":""}`
+    : `${value} · -- N·m${perG?"/g":""}`;
+}
+function beltRefreshTorqueUnits(){
+  ["pretension","k_lat","k_lon_brake","k_vert"].forEach(key=>{
+    const el=$(key), out=$("v-"+key);
+    if(el&&out) out.textContent=beltFormatTorqueSetting(key,+el.value);
+  });
+  const scale=beltNmPerCount();
+  $("belt-torque-scale").textContent=Number.isFinite(scale)
+    ? `Kt ${latest.Kt.toFixed(3)} N·m/A · Imax ${latest.Imax.toFixed(0)} A`
+    : ui("aguardando Kt/Imax","waiting for Kt/Imax");
+  $("torque-l").textContent=Number.isFinite(scale)
+    ? `${beltState.torqueLeft} · ${(beltState.torqueLeft*scale).toFixed(3)} N·m`
+    : `${beltState.torqueLeft} · -- N·m`;
+  $("torque-r").textContent=Number.isFinite(scale)
+    ? `${beltState.torqueRight} · ${(beltState.torqueRight*scale).toFixed(3)} N·m`
+    : `${beltState.torqueRight} · -- N·m`;
+  ["pretension","k_lat","k_lon_brake","k_vert"].forEach(key=>{
+    const el=$("a_"+key),out=$("v-a_"+key);
+    if(el&&out) advancedFormatOutput(key,+el.value,out);
+  });
+  const maxNm=Number.isFinite(scale) ? scale*BELT_TORQUE_MAX : undefined;
+  $("torquechart2-scale").textContent=Number.isFinite(maxNm)
+    ? ui(`Escala 0…${maxNm.toFixed(2)} N·m · histórico aproximado de 15 segundos a 60 Hz`,`Scale 0…${maxNm.toFixed(2)} N·m · approximately 15 seconds of history at 60 Hz`)
+    : ui("Escala em N·m · aguardando Kt/Imax","N·m scale · waiting for Kt/Imax");
+}
+beltRefreshTorqueUnits();
+
+const vertBufSize = 900;
+const vertBuf = new Float32Array(vertBufSize);
+let vertHead = 0, vertPeak = 0;
+const torqueBufSize = 900;
+const torqueLeftBuf = new Float32Array(torqueBufSize);
+const torqueRightBuf = new Float32Array(torqueBufSize);
+let torqueHead = 0;
+
+$("reset-g-peaks").onclick=()=>{
+  Object.keys(beltGPeaks).forEach(key=>beltGPeaks[key]=0);
+  vertPeak=0;
+  beltRenderGPeaks();
+};
+$("auto-g-scale").addEventListener("change",()=>{
+  beltWsSend({type:"advanced_config",patch:{auto_scale:$("auto-g-scale").checked},persist:true});
+});
+beltRenderGPeaks();
+
+const gballCanvas = $("gball2");
+const gballCtx = gballCanvas.getContext("2d");
+const vchartCanvas = $("vchart2");
+const vchartCtx = vchartCanvas.getContext("2d");
+const torqueChartCanvas = $("torquechart2");
+const torqueChartCtx = torqueChartCanvas.getContext("2d");
+
+function beltResizeCanvases(){
+  // Os gráficos temporais usam largura responsiva; o G-ball tem 260x260 fixos.
+  const dpr = window.devicePixelRatio || 1;
+  [[vchartCanvas,vchartCtx],[torqueChartCanvas,torqueChartCtx]].forEach(([canvas,ctx])=>{
+    const r=canvas.getBoundingClientRect();
+    if(r.width>0){
+      canvas.width=Math.round(r.width*dpr);
+      canvas.height=Math.round(r.height*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+  });
+}
+
+function beltDrawGball(){
+  const c = gballCtx, cvs = gballCanvas;
+  const w = cvs.width, h = cvs.height;
+  const cx = w/2, cy = h/2, r = Math.min(w,h)/2 - 18;
+  c.clearRect(0,0,w,h);
+  c.strokeStyle = "#2a3140"; c.lineWidth = 1;
+  for(let g=0.5; g<=BELT_G_BALL; g+=0.5){
+    c.beginPath(); c.arc(cx,cy,(g/BELT_G_BALL)*r,0,Math.PI*2); c.stroke();
+  }
+  c.strokeStyle = "#3a4150";
+  c.beginPath(); c.arc(cx,cy,r,0,Math.PI*2); c.stroke();
+  c.strokeStyle = "#2a3140";
+  c.beginPath();
+  c.moveTo(cx-r,cy); c.lineTo(cx+r,cy);
+  c.moveTo(cx,cy-r); c.lineTo(cx,cy+r);
+  c.stroke();
+  c.fillStyle = "#8b98a8"; c.font = "11px ui-monospace,Consolas,monospace";
+  c.fillText(ui("ACEL","ACCEL"), cx+6, cy-r+12);
+  c.fillText(ui("FREIO","BRAKE"), cx+6, cy+r-4);
+  c.fillText(ui("ESQ","LEFT"), cx-r+6, cy-6);
+  c.fillText(ui("DIR","RIGHT"), cx+r-34, cy-6);
+  const x = cx + (beltState.latG / BELT_G_BALL) * r;
+  const y = cy - (beltState.lonG / BELT_G_BALL) * r;
+  const mag = Math.min(Math.hypot(beltState.latG, beltState.lonG) / BELT_G_BALL, 1);
+  const hue = (1-mag) * 140;
+  const color = `hsl(${hue},85%,55%)`;
+  c.strokeStyle = color; c.lineWidth = 2; c.globalAlpha = 0.4;
+  c.beginPath(); c.moveTo(cx,cy); c.lineTo(x,y); c.stroke();
+  c.globalAlpha = 1;
+  const grad = c.createRadialGradient(x,y,2,x,y,24);
+  grad.addColorStop(0, color); grad.addColorStop(1, "rgba(0,0,0,0)");
+  c.fillStyle = grad;
+  c.beginPath(); c.arc(x,y,24,0,Math.PI*2); c.fill();
+  c.fillStyle = color;
+  c.beginPath(); c.arc(x,y,8,0,Math.PI*2); c.fill();
+  c.strokeStyle = "#e6edf3"; c.lineWidth = 1.5;
+  c.beginPath(); c.arc(x,y,8,0,Math.PI*2); c.stroke();
+}
+
+function beltPushVert(g){
+  vertBuf[vertHead] = g;
+  vertHead = (vertHead + 1) % vertBufSize;
+  const a = Math.abs(g);
+  if(a > vertPeak) vertPeak = a;
+  vertPeak *= 0.999;
+}
+
+function beltDrawVchart(){
+  const cvs = vchartCanvas;
+  const r = cvs.getBoundingClientRect();
+  if(!r.width) return;
+  if(cvs.width !== Math.round(r.width * (window.devicePixelRatio||1))) beltResizeCanvases();
+  const c = vchartCtx;
+  const w = r.width, h = r.height;
+  c.clearRect(0,0,w,h);
+  const scale = (h/2) / BELT_G_VERT;
+  c.strokeStyle = "#2a3140"; c.lineWidth = 1;
+  for(let g=-1.5; g<=1.5; g+=0.5){
+    const y = h/2 - g*scale;
+    c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke();
+  }
+  c.strokeStyle = "#3a4150";
+  c.beginPath(); c.moveTo(0,h/2); c.lineTo(w,h/2); c.stroke();
+  c.fillStyle = "#8b98a8"; c.font = "10px ui-monospace,Consolas,monospace";
+  [-1,0,1].forEach(g=>{
+    c.fillText(`${g>0?"+":""}${g.toFixed(1)} g`, 4, h/2 - g*scale - 3);
+  });
+  c.strokeStyle = "#4aa3ff"; c.lineWidth = 1.5;
+  c.beginPath();
+  const step = w / vertBufSize;
+  for(let i=0; i<vertBufSize; i++){
+    const idx = (vertHead + i) % vertBufSize;
+    const y = h/2 - vertBuf[idx]*scale;
+    const x = i*step;
+    if(i===0) c.moveTo(x,y); else c.lineTo(x,y);
+  }
+  c.stroke();
+}
+
+function beltPushTorque(left,right){
+  torqueLeftBuf[torqueHead]=left;
+  torqueRightBuf[torqueHead]=right;
+  torqueHead=(torqueHead+1)%torqueBufSize;
+}
+
+function beltDrawTorqueChart(){
+  const r=torqueChartCanvas.getBoundingClientRect();
+  if(!r.width) return;
+  if(torqueChartCanvas.width!==Math.round(r.width*(window.devicePixelRatio||1))) beltResizeCanvases();
+  const c=torqueChartCtx,w=r.width,h=r.height;
+  const top=10,bottom=20,plotH=h-top-bottom;
+  c.clearRect(0,0,w,h);
+  c.font="10px ui-monospace,Consolas,monospace";
+  c.fillStyle="#8b98a8";
+  const nmPerCount=beltNmPerCount();
+  const maxNm=Number.isFinite(nmPerCount) ? nmPerCount*BELT_TORQUE_MAX : 0;
+  if(!(maxNm>0)){
+    c.fillText(ui("Aguardando Kt e Imax do firmware para calcular N·m","Waiting for firmware Kt and Imax to calculate N·m"),10,22);
+    return;
+  }
+  c.strokeStyle="#2a3140"; c.lineWidth=1;
+  [0,.25,.5,.75,1].forEach(fraction=>{
+    const valueNm=maxNm*fraction;
+    const y=top+(1-fraction)*plotH;
+    c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke();
+    c.fillText(`${valueNm.toFixed(2)} N·m`,4,Math.max(10,y-3));
+  });
+  const pret=Math.max(0,Math.min(BELT_TORQUE_MAX,+$("a_pretension").value||0));
+  const pretNm=pret*nmPerCount;
+  const pretY=top+(1-pretNm/maxNm)*plotH;
+  c.strokeStyle="#ffcc44"; c.setLineDash([5,4]);
+  c.beginPath(); c.moveTo(0,pretY); c.lineTo(w,pretY); c.stroke();
+  c.setLineDash([]);
+  const step=w/(torqueBufSize-1);
+  [[torqueLeftBuf,"#c586ff"],[torqueRightBuf,"#4aa3ff"]].forEach(([buffer,color])=>{
+    c.strokeStyle=color; c.lineWidth=1.6; c.beginPath();
+    for(let i=0;i<torqueBufSize;i++){
+      const value=buffer[(torqueHead+i)%torqueBufSize];
+      const valueNm=value*nmPerCount;
+      const x=i*step,y=top+(1-valueNm/maxNm)*plotH;
+      if(i===0)c.moveTo(x,y); else c.lineTo(x,y);
+    }
+    c.stroke();
+  });
+}
+
+function beltUpdateBar(bar, mark, valueEl, v, side){
+  const pct = Math.max(0, Math.min(1, v / BELT_TORQUE_MAX));
+  bar.style.width = (pct*100) + "%";
+  const mpct = Math.max(0, Math.min(1, beltState.pretension / BELT_TORQUE_MAX));
+  mark.style.left = (mpct*100) + "%";
+  if(side==="left") beltState.torqueLeft=v; else beltState.torqueRight=v;
+  const scale=beltNmPerCount();
+  valueEl.textContent=Number.isFinite(scale)
+    ? `${v} · ${(v*scale).toFixed(3)} N·m`
+    : `${v} · -- N·m`;
+}
+
+function beltDrawLoop(){
+  if(activeView === "belt2"){
+    beltDrawGball();
+    beltDrawVchart();
+    beltDrawTorqueChart();
+  }
+  requestAnimationFrame(beltDrawLoop);
+}
+
+/* --- WebSocket to Python (iRacing telemetry + mock control + mapping) --- */
+let beltWs = null;
+const beltWsSend = obj => { if(beltWs && beltWs.readyState === 1) beltWs.send(JSON.stringify(obj)); };
+
+function beltConnect(){
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  beltWs = new WebSocket(`${proto}://${location.host}/ws`);
+  beltWs.onopen = ()=>{
+    $("belt-ir-status").textContent = ui("aguardando sessão","waiting for session");
+  };
+  beltWs.onclose = ()=>{
+    $("belt-ir-status").textContent = ui("backend desconectado","backend disconnected");
+    $("belt-ir-dot").classList.remove("on");
+    setTimeout(beltConnect, 1000);
+  };
+  beltWs.onmessage = (ev)=>{
+    let m; try{ m = JSON.parse(ev.data); }catch{ return; }
+    if(m.type === "telemetry"){
+      beltState.msgs++;
+      const now = performance.now();
+      const wallNow=Date.now();
+      if(Number.isFinite(m.captured_ms)) beltState.ageMs=beltEma(beltState.ageMs,Math.max(0,wallNow-m.captured_ms));
+      if(Number.isFinite(m.backend_send_ms)) beltState.wsMs=beltEma(beltState.wsMs,Math.max(0,wallNow-m.backend_send_ms));
+      if(Number.isInteger(m.seq)){
+        if(beltState.lastSeq!==null && m.seq>beltState.lastSeq+1) beltState.wsDrops+=m.seq-beltState.lastSeq-1;
+        beltState.lastSeq=m.seq;
+      }
+      const dt = (now - beltState.rateT)/1000;
+      if(dt >= 1){ $("belt-rate-tag").textContent = (beltState.msgs/dt).toFixed(0)+" Hz"; beltState.msgs = 0; beltState.rateT = now; }
+      const rawLatG = m.lat/BG, rawLonG = m.lon/BG, vertG = m.vert/BG;
+      const pitch=m.pitch||0, roll=m.roll||0;
+      const subtractGravity=$("a_subtract_gravity").checked;
+      const latG = subtractGravity ? rawLatG-Math.cos(pitch)*Math.sin(roll) : rawLatG;
+      const lonG = subtractGravity ? rawLonG-(-Math.sin(pitch)) : rawLonG;
+      const vertAC = subtractGravity ? vertG-Math.cos(pitch)*Math.cos(roll) : vertG;
+      beltState.latG = latG; beltState.lonG = lonG;
+      const telemetryValid = !!m.connected;
+      const driveActive = telemetryValid && (!!m.mock_enabled || !!m.on_track);
+      beltState.lastSampleAt = now;
+      beltState.telemetryValid = telemetryValid;
+      beltState.driveActive = driveActive;
+      beltSetAutoScaleState(m.auto_scale);
+      if(driveActive) beltCaptureGPeaks(latG,lonG,vertAC);
+      beltPushVert(vertAC);
+      $("belt-lat").textContent = latG.toFixed(2);
+      $("belt-lon").textContent = lonG.toFixed(2);
+      $("belt-mag").textContent = Math.hypot(latG,lonG).toFixed(2);
+      $("belt-vert").textContent = vertG.toFixed(2);
+      $("belt-vertac").textContent = vertAC.toFixed(2);
+      $("belt-peak").textContent = vertPeak.toFixed(2);
+      $("belt2-lat").textContent = latG.toFixed(2);
+      $("belt2-lon").textContent = lonG.toFixed(2);
+      $("belt2-vert").textContent = vertG.toFixed(2);
+      $("belt2-pitch").textContent = ((m.pitch||0)*180/Math.PI).toFixed(2);
+      $("belt2-roll").textContent = ((m.roll||0)*180/Math.PI).toFixed(2);
+      $("belt2-track").textContent = m.mock_enabled ? ui("teste explícito","explicit test") : (m.on_track ? ui("na pista","on track") : ui("fora da pista","off track"));
+      $("belt2-graph-lat").textContent = latG.toFixed(2);
+      $("belt2-graph-lon").textContent = lonG.toFixed(2);
+      $("belt2-mag").textContent = Math.hypot(latG,lonG).toFixed(2);
+      $("belt2-graph-vert").textContent = vertG.toFixed(2);
+      $("belt2-vertac").textContent = vertAC.toFixed(2);
+      $("belt2-peak").textContent = vertPeak.toFixed(2);
+      const ird = $("belt-ir-dot");
+      const ird2 = $("belt2-ir-dot");
+      if(m.mock_enabled){
+        ird.classList.toggle("on", !!m.connected);
+        ird2.classList.toggle("on", !!m.connected);
+        $("belt-ir-status").textContent = "teste aleatório ativo";
+        $("belt2-ir-status").textContent = ui("teste aleatório ativo","random test active");
+        $("belt-src-tag").textContent = "teste";
+      }else if(driveActive){
+        ird.classList.add("on");
+        ird2.classList.add("on");
+        $("belt-ir-status").textContent = "iRacing na pista";
+        $("belt2-ir-status").textContent = ui("iRacing na pista","iRacing on track");
+        $("belt-src-tag").textContent = "iRacing";
+      }else{
+        ird.classList.remove("on");
+        ird2.classList.remove("on");
+        const reason = m.connected ? ui("fora da pista · pré-tensão disponível","off track · pretension available") : ui("aguardando iRacing · pré-tensão disponível","waiting for iRacing · pretension available");
+        $("belt-ir-status").textContent = reason;
+        $("belt2-ir-status").textContent = reason;
+        $("belt-src-tag").textContent = "off";
+      }
+      if(m.torque){
+        beltUpdateBar($("bar-l"), $("mark-l"), $("torque-l"), m.torque.left, "left");
+        beltUpdateBar($("bar-r"), $("mark-r"), $("torque-r"), m.torque.right, "right");
+      }
+      if(m.torque_advanced){
+        beltUpdateBar2(m.torque_advanced.left,m.torque_advanced.right);
+      }
+      const selectedTorque = driveActive ? m.torque_advanced : beltPretensionOnlyTorque();
+      if(selectedTorque && beltState.armed && writer){
+        if(beltState.rampStartedAt===null) beltState.rampStartedAt=now;
+        beltState.rampProgress=Math.min(1,Math.max(0,(now-beltState.rampStartedAt)/BELT_ARM_RAMP_MS));
+        beltQueueTorque(
+          Math.round(selectedTorque.left*beltState.rampProgress),
+          Math.round(selectedTorque.right*beltState.rampProgress),
+          m.seq
+        );
+      }
+      beltApplyServerState(m);
+    }else if(m.type === "state"){
+      beltApplyServerState(m);
+    }else if(m.type === "error"){
+      log("sys","belt: "+m.message);
+    }
+  };
+}
+
+function beltApplyServerState(s){
+  if(s.mock_enabled !== undefined){
+    beltState.mockEnabled = s.mock_enabled;
+    $("mock-panel").hidden = !s.mock_enabled;
+    $("mock-panel2").hidden = !s.mock_enabled;
+    $("belt-test-mode").checked = !!s.mock_enabled;
+    $("belt2-test-mode").checked = !!s.mock_enabled;
+    if(s.source_error){
+      $("belt-ir-status").textContent = "iRacing indisponível · saída inerte";
+      $("belt2-ir-status").textContent = ui("iRacing indisponível · saída inerte","iRacing unavailable · output disabled");
+      log("sys","belt: "+s.source_error);
+    }
+  }
+  if(s.mock){
+    if(document.activeElement !== $("auto-demo")) $("auto-demo").checked = !!s.mock.auto_demo;
+    if(document.activeElement !== $("sine_hz")){
+      $("sine_hz").value = s.mock.sine_hz;
+      $("v-sine_hz").textContent = (+s.mock.sine_hz).toFixed(1);
+    }
+    if(document.activeElement !== $("sine_amp_g")){
+      $("sine_amp_g").value = s.mock.sine_amp_g;
+      $("v-sine_amp_g").textContent = (+s.mock.sine_amp_g).toFixed(2);
+    }
+    if(document.activeElement !== $("auto-demo2")) $("auto-demo2").checked = !!s.mock.auto_demo;
+    if(document.activeElement !== $("sine_hz2")){
+      $("sine_hz2").value=s.mock.sine_hz;
+      $("v-sine_hz2").textContent=(+s.mock.sine_hz).toFixed(1);
+    }
+    if(document.activeElement !== $("sine_amp_g2")){
+      $("sine_amp_g2").value=s.mock.sine_amp_g;
+      $("v-sine_amp_g2").textContent=(+s.mock.sine_amp_g).toFixed(2);
+    }
+  }
+  if(s.config){
+    BELT_CFG_KEYS.forEach(k=>{
+      if(s.config[k] !== undefined && document.activeElement !== $(k)){
+        $(k).value = s.config[k];
+        const out = $("v-"+k);
+        if(out) out.textContent = ["pretension","k_lat","k_lon_brake","k_vert"].includes(k)
+          ? beltFormatTorqueSetting(k,+s.config[k]) : s.config[k];
+      }
+    });
+    if(s.config.pretension !== undefined) beltState.pretension = s.config.pretension;
+    if(s.config.invert_lat !== undefined && document.activeElement !== $("invert_lat")) $("invert_lat").checked = !!s.config.invert_lat;
+  }
+  if(s.advanced_config){
+    BELT_ADV_CFG_KEYS.forEach(k=>{
+      const el=$("a_"+k), out=$("v-a_"+k);
+      if(el && s.advanced_config[k] !== undefined && document.activeElement !== el) el.value=s.advanced_config[k];
+      if(out && s.advanced_config[k] !== undefined) advancedFormatOutput(k,s.advanced_config[k],out);
+    });
+    if(document.activeElement !== $("a_invert_lat")) $("a_invert_lat").checked=!!s.advanced_config.invert_lat;
+    if(document.activeElement !== $("a_subtract_gravity")) $("a_subtract_gravity").checked=!!s.advanced_config.subtract_gravity;
+    if(document.activeElement !== $("auto-g-scale")) $("auto-g-scale").checked=!!s.advanced_config.auto_scale;
+    beltRenderGPeaks();
+  }
+  beltSetAutoScaleState(s.auto_scale);
+  if(s.config_files){
+    [["belt","belt"],["advanced","belt2"]].forEach(([key,prefix])=>{
+      const info=s.config_files[key], status=$(prefix+"-save-status"), path=$(prefix+"-config-path");
+      if(!info) return;
+      status.textContent=info.error ? ui("erro ao salvar/carregar","save/load error") : ui("JSON · salvamento automático","JSON · automatic saving");
+      status.style.color=info.error ? "var(--bad)" : "";
+      path.textContent=info.error ? `${info.error} · ${info.path}` : `${ui("Arquivo individual","Individual file")}: ${info.path}`;
+    });
+  }
+}
+
+function beltUpdateBar2(left,right){
+  const pret=+( $("a_pretension").value || 0), scale=beltNmPerCount();
+  beltPushTorque(left,right);
+  [["l",left],["r",right]].forEach(([side,value])=>{
+    const attenuation=+( $(side==="l" ? "a_left_attenuation_pct" : "a_right_attenuation_pct").value || 100)/100;
+    $("bar2-"+side).style.width=(Math.max(0,Math.min(1,value/BELT_TORQUE_MAX))*100)+"%";
+    $("mark2-"+side).style.left=(Math.max(0,Math.min(1,pret*attenuation/BELT_TORQUE_MAX))*100)+"%";
+    $("torque2-"+side).textContent=Number.isFinite(scale) ? `${value} · ${(value*scale).toFixed(3)} N·m` : value;
+  });
+}
+
+function beltUpdateArmUI(){
+  const connected = !!writer;
+  [$("belt-arm"),$("belt2-arm")].forEach(btn=>{
+    btn.disabled = !connected && !beltState.armed;
+    btn.textContent = beltState.armed
+      ? (beltState.rampProgress<1
+          ? `${ui("DESARMAR · RAMPA","DISARM · RAMP")} ${Math.round(beltState.rampProgress*100)}%`
+          : (beltState.driveActive ? ui("DESARMAR","DISARM") : ui("DESARMAR · PRÉ-TENSÃO","DISARM · PRETENSION")))
+      : ui("ARMAR","ARM");
+    btn.classList.toggle("armed", beltState.armed);
+    btn.classList.toggle("primary", !beltState.armed && connected);
+  });
+}
+function beltToggleArm(){
+  if(!writer){ log("sys",ui("conecte a serial primeiro","connect the serial port first")); return; }
+  beltState.armed = !beltState.armed;
+  beltResetArmRamp();
+  if(!beltState.armed){ beltTorquePending=null; if(writer) send("E", true); }
+  beltUpdateArmUI();
+}
+function beltEmergencyStop(reason){
+  beltState.armed = false;
+  beltResetArmRamp();
+  beltTorquePending=null;
+  if(writer) send("E", true);
+  beltUpdateArmUI();
+  if(reason) log("sys",ui("belt: ","belt: ")+reason+ui(", motores parados e sistema desarmado",", motors stopped and system disarmed"));
+}
+$("belt-arm").onclick = beltToggleArm;
+$("belt2-arm").onclick = beltToggleArm;
+$("belt-panic").onclick = ()=>beltEmergencyStop(ui("parada manual","manual stop"));
+$("belt2-panic").onclick = ()=>beltEmergencyStop(ui("parada manual","manual stop"));
+function beltSetTestMode(e){
+  if(beltState.armed) beltEmergencyStop(ui("mudança da fonte de telemetria","telemetry source changed"));
+  beltWsSend({type:"test_mode", enabled:e.target.checked});
+}
+$("belt-test-mode").addEventListener("change", beltSetTestMode);
+$("belt2-test-mode").addEventListener("change", beltSetTestMode);
+window.addEventListener("keydown", e=>{
+  if(e.key === "Escape" && activeView === "diag") diagAbort(true);
+  if(e.key === "Escape" && (activeView === "belt" || activeView === "belt2")) beltEmergencyStop("ESC");
+});
+
+setInterval(()=>{
+  beltUpdateArmUI();
+  if(beltState.armed && !writer){
+    beltState.armed = false;
+    beltResetArmRamp();
+    beltTorquePending=null;
+    log("sys",ui("belt: serial caiu, desarmado","belt: serial connection lost, system disarmed"));
+  }
+  if(beltState.armed && beltState.lastSampleAt && (performance.now() - beltState.lastSampleAt) > BELT_WATCHDOG_MS){
+    beltTorquePending=null;
+    if(writer) send("E", true);
+    beltState.armed = false;
+    beltResetArmRamp();
+    log("sys",ui("belt watchdog: telemetria parou (>","belt watchdog: telemetry stopped (>")+BELT_WATCHDOG_MS+ui(" ms), motores parados"," ms), motors stopped"));
+  }
+}, 100);
+
+/* --- Mapping sliders --- */
+let beltCfgPending = null, beltCfgPersist = false;
+function beltSendCfgSoon(persist=false){
+  beltCfgPersist = beltCfgPersist || persist;
+  if(beltCfgPending) return;
+  beltCfgPending = setTimeout(()=>{
+    beltCfgPending = null;
+    const patch = {};
+    BELT_CFG_KEYS.forEach(k=>{ patch[k] = parseFloat($(k).value); });
+    patch.invert_lat = $("invert_lat").checked;
+    const shouldPersist=beltCfgPersist; beltCfgPersist=false;
+    beltWsSend({type:"config", patch, persist:shouldPersist});
+  }, 60);
+}
+BELT_CFG_KEYS.forEach(k=>{
+  $(k).addEventListener("input", ()=>{
+    const out = $("v-"+k);
+    if(out) out.textContent = ["pretension","k_lat","k_lon_brake","k_vert"].includes(k)
+      ? beltFormatTorqueSetting(k,+$(k).value) : $(k).value;
+    if(k === "pretension") beltState.pretension = parseFloat($(k).value);
+    beltSendCfgSoon();
+  });
+  $(k).addEventListener("change",()=>beltSendCfgSoon(true));
+});
+$("invert_lat").addEventListener("change",()=>beltSendCfgSoon(true));
+
+/* --- Mapeamento avançado --- */
+let advancedCfgPending=null, advancedCfgPersist=false;
+function advancedFormatOutput(key,value,out){
+  if(["pretension","k_lat","k_lon_brake","k_vert"].includes(key)) out.textContent=beltFormatTorqueSetting(key,value);
+  else if(key.endsWith("_attenuation_pct")) out.textContent=Math.round(+value)+"%";
+  else if(key.endsWith("_g")) out.textContent=(+value).toFixed(2)+" g";
+  else out.textContent=(+value).toFixed(2);
+}
+function advancedSendCfgSoon(persist=false){
+  advancedCfgPersist=advancedCfgPersist || persist;
+  if(advancedCfgPending) return;
+  advancedCfgPending=setTimeout(()=>{
+    advancedCfgPending=null;
+    const patch={};
+    BELT_ADV_CFG_KEYS.forEach(k=>patch[k]=parseFloat($("a_"+k).value));
+    patch.invert_lat=$("a_invert_lat").checked;
+    patch.subtract_gravity=$("a_subtract_gravity").checked;
+    const shouldPersist=advancedCfgPersist; advancedCfgPersist=false;
+    beltWsSend({type:"advanced_config",patch,persist:shouldPersist});
+  },60);
+}
+BELT_ADV_CFG_KEYS.forEach(k=>{
+  $("a_"+k).addEventListener("input",()=>{
+    advancedFormatOutput(k,+$("a_"+k).value,$("v-a_"+k));
+    if(k==="lat_max_g" || k==="lon_max_g" || k==="vert_max_g") beltRenderGPeaks();
+    advancedSendCfgSoon();
+  });
+  $("a_"+k).addEventListener("change",()=>advancedSendCfgSoon(true));
+});
+$("a_invert_lat").addEventListener("change",()=>advancedSendCfgSoon(true));
+$("a_subtract_gravity").addEventListener("change",()=>advancedSendCfgSoon(true));
+
+/* --- Mock: G-ball click-and-hold + sine + auto demo --- */
+function ballToG(clientX, clientY){
+  const rect = gballCanvas.getBoundingClientRect();
+  const cvs = gballCanvas;
+  const cx = cvs.width/2, cy = cvs.height/2;
+  const r = Math.min(cvs.width, cvs.height)/2 - 18;
+  const px = (clientX - rect.left) * (cvs.width / rect.width);
+  const py = (clientY - rect.top) * (cvs.height / rect.height);
+  let lat_g = ((px-cx)/r) * BELT_G_BALL;
+  let lon_g = -((py-cy)/r) * BELT_G_BALL;
+  const mag = Math.hypot(lat_g, lon_g);
+  if(mag > BELT_G_BALL){
+    lat_g = lat_g * BELT_G_BALL / mag;
+    lon_g = lon_g * BELT_G_BALL / mag;
+  }
+  return {lat_g, lon_g};
+}
+let manualPending = 0;
+function sendManual(lat_g, lon_g){
+  const now = performance.now();
+  if(now - manualPending < 15) return;
+  manualPending = now;
+  beltWsSend({type:"mock_manual", lat_g, lon_g});
+}
+gballCanvas.addEventListener("pointerdown", e=>{
+  if(!beltState.mockEnabled) return;
+  beltState.dragging = true;
+  gballCanvas.setPointerCapture(e.pointerId);
+  gballCanvas.classList.add("dragging");
+  const {lat_g, lon_g} = ballToG(e.clientX, e.clientY);
+  beltWsSend({type:"mock_manual", lat_g, lon_g});
+  e.preventDefault();
+});
+gballCanvas.addEventListener("pointermove", e=>{
+  if(!beltState.dragging) return;
+  const {lat_g, lon_g} = ballToG(e.clientX, e.clientY);
+  sendManual(lat_g, lon_g);
+});
+function beltEndDrag(e){
+  if(!beltState.dragging) return;
+  beltState.dragging = false;
+  gballCanvas.classList.remove("dragging");
+  try{ gballCanvas.releasePointerCapture(e.pointerId); }catch{}
+  beltWsSend({type:"mock_release"});
+}
+gballCanvas.addEventListener("pointerup", beltEndDrag);
+gballCanvas.addEventListener("pointercancel", beltEndDrag);
+gballCanvas.addEventListener("pointerleave", e=>{ if(beltState.dragging) beltEndDrag(e); });
+
+let sinePending = null;
+function beltSendSineSoon(){
+  if(sinePending) return;
+  sinePending = setTimeout(()=>{
+    sinePending = null;
+    beltWsSend({type:"mock_sine", hz:parseFloat($("sine_hz2").value), amp_g:parseFloat($("sine_amp_g2").value)});
+  }, 40);
+}
+$("sine_hz2").addEventListener("input", ()=>{ $("v-sine_hz2").textContent = (+$("sine_hz2").value).toFixed(1); beltSendSineSoon(); });
+$("sine_amp_g2").addEventListener("input", ()=>{ $("v-sine_amp_g2").textContent = (+$("sine_amp_g2").value).toFixed(2); beltSendSineSoon(); });
+$("auto-demo2").addEventListener("change", ()=>{ beltWsSend({type:"mock_auto", enabled:$("auto-demo2").checked}); });
+
+/* boot */
+applyLanguage();
+beltUpdateArmUI();
+beltConnect();
+requestAnimationFrame(beltDrawLoop);
+</script>
+<script src="/static/config-files.js"></script>
+</body>
+</html>

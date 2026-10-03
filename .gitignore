@@ -1,0 +1,36 @@
+# Generated output and local environments
+**/.pio/
+**/build/
+**/build-testmode/
+**/dist/
+**/dist-testmode/
+**/.venv/
+**/venv/
+**/__pycache__/
+*.py[cod]
+*.map
+*.elf
+*.bin
+*.hex
+*.exe
+*.log
+*.tmp
+*.FCStd1
+**/.vscode/
+**/.serial-sessions/
+.claude/
+.codex/
+.agents/
+HARDWARE_DIAGNOSTIC_HANDOFF.md
+bt-wheel-belt-*.json
+bt-wheel-motors-*.json
+docs/PUBLICACAO.md
+# Obsolete standalone dashboard and unused Portuguese captures
+pc-software/motor-dashboard.html
+docs/images/software-belt.jpg
+docs/images/software-belt-visao.jpg
+docs/images/software-config.jpg
+docs/images/software-config-acoes.jpg
+docs/images/software-motores.jpg
+docs/images/software-diagnostico.jpg
+docs/images/software-console.jpg
