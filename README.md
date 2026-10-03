@@ -12,7 +12,7 @@ BT-Wheel is an experimental project, not a certified restraint device. Provide a
 
 ## Belt tensioner in action
 
-Watch my belt tensioner operating in this [demonstration video](docs/images/belt-tensioner-demo.mp4) (MP4, approximately 48 MB).
+Watch my belt tensioner operating: [download the demonstration video](https://raw.githubusercontent.com/eagabriel/BT-Wheel/refs/heads/main/docs/images/belt-tensioner-demo.mp4) (MP4, approximately 48 MB). Open the downloaded file in your video player; GitHub's file page does not provide inline playback for this video.
 
 ## How it works
 
