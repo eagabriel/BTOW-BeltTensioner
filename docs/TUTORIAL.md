@@ -305,3 +305,7 @@ Both imports disarm the belt system and require manual arming afterward. Stop di
 Firmware command deadman: 150 ms. Dashboard watchdog: 250 ms. The firmware also checks main-loop progress during manual commands. These cannot cover every failure, including lockups preventing protection code from running.
 
 `ENABLE_BOARD_TEMP_SENSOR` and `ESTOP_ENABLE` are disabled in current `config.h`. The proposed emergency input uses PA3 and conflicts with a brake-input option. Provide an accessible mechanical release and suitable physical stop; the screen button does not replace them.
+
+## 13. Telemetry processing credit
+
+I adapted the telemetry signal-conditioning and filtering approach from [mherbold/MarvinsAIRARefactored](https://github.com/mherbold/MarvinsAIRARefactored). Thank you to mherbold and the project's contributors for their work. In BT-Wheel, the conditioned telemetry drives independent torque commands for the two motors, rather than servo-position commands. This is an adaptation of the processing approach, not a reproduction of the full application. See the [README's credits and licensing section](../README.md#credits-and-licensing) and the original project's GPLv3 license.

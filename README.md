@@ -116,6 +116,8 @@ Board-temperature monitoring and the dedicated emergency-stop input exist in the
 
 ## Credits and licensing
 
+I adapted the telemetry signal-conditioning and filtering approach from [mherbold/MarvinsAIRARefactored](https://github.com/mherbold/MarvinsAIRARefactored) for BT-Wheel's belt effects. Credit goes to mherbold and the project's contributors. BT-Wheel applies this processing to independent motor torque commands rather than servo-position commands; it does not reproduce the full application. The referenced project is GPLv3-licensed; this acknowledgment does not replace its applicable license obligations.
+
 The firmware derives from [EFeru/hoverboard-firmware-hack-FOC](https://github.com/EFeru/hoverboard-firmware-hack-FOC) and the [SiMachines fork](https://github.com/SiMachines/hoverboard-firmware-hack-FOC). Preserve their credits and the firmware's GPLv3 license when redistributing it. The application's distribution license still needs to be formalized; this README does not change existing licenses.
 
 Project repository: [eagabriel/BT-Wheel](https://github.com/eagabriel/BT-Wheel).
